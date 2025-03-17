@@ -35,15 +35,13 @@
         </div>
 
         <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} mb-6">
-                        <span>{{ message }}</span>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.category }}">
+            <span>{{ message.message }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
 
         <!-- Search and Filter Section -->
         <div class="flex items-center gap-3 mb-8">
@@ -83,12 +81,12 @@
                             </div>
                             <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                                 <li>
-                                    <a href="{{ url_for('edit_member', member_id=member.id) }}">
+                                    <a href="{{ url_for(request, 'edit_member_get', member_id=member.id) }}">
                                         <i class="fas fa-edit text-info"></i> Edit
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ url_for('delete_member', member_id=member.id) }}" 
+                                    <a href="{{ url_for(request, 'delete_member', member_id=member.id) }}" 
                                        onclick="return confirm('Are you sure?')">
                                         <i class="fas fa-trash text-error"></i> Delete
                                     </a>
@@ -133,7 +131,7 @@
     <dialog id="add_member_modal" class="modal">
         <div class="modal-box">
             <h3 class="font-bold text-lg">Add New Member</h3>
-            <form method="POST" action="{{ url_for('add_member') }}" class="mt-4 space-y-4">
+            <form method="POST" action="{{ url_for(request, 'add_member') }}" class="mt-4 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="form-control">
                         <label class="label">
@@ -174,16 +172,6 @@
                     <button type="submit" class="btn btn-primary">
                         Add Member
                     </button>
-                    <!-- Update alert classes to match DaisyUI -->
-                    {% for category, message in messages %}
-                        <div class="alert alert-{% if category == 'error' %}error{% else %}success{% endif %} mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>{{ message }}</span>
-                        </div>
-                    {% endfor %}
                 </div>
             </form>
         </div>
