@@ -58,12 +58,12 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
   };
 
   return (
-    <div className="card bg-base-100 p-4">
-      <h3 className="font-bold text-lg mb-4">{formTitle}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="card bg-base-100 p-3 sm:p-4">
+      <h3 className="font-bold text-lg mb-3 sm:mb-4">{formTitle}</h3>
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div className="form-control">
-            <label className="label">
+            <label className="label py-1">
               <span className="label-text">Name</span>
             </label>
             <input 
@@ -71,12 +71,12 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
               name="name" 
               value={formData.name}
               onChange={handleChange}
-              className="input input-bordered" 
+              className="input input-bordered input-sm sm:input-md w-full" 
               required 
             />
           </div>
           <div className="form-control">
-            <label className="label">
+            <label className="label py-1">
               <span className="label-text">Email</span>
             </label>
             <input 
@@ -84,12 +84,12 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
               name="email" 
               value={formData.email}
               onChange={handleChange}
-              className="input input-bordered" 
+              className="input input-bordered input-sm sm:input-md w-full" 
               required 
             />
           </div>
           <div className="form-control">
-            <label className="label">
+            <label className="label py-1">
               <span className="label-text">Phone</span>
             </label>
             <input 
@@ -100,12 +100,12 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
               name="phone" 
               value={formData.phone}
               onChange={handleChange}
-              className="input input-bordered" 
+              className="input input-bordered input-sm sm:input-md w-full" 
               required 
             />
           </div>
           <div className="form-control">
-            <label className="label">
+            <label className="label py-1">
               <span className="label-text">Join Date</span>
             </label>
             <input 
@@ -113,12 +113,12 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
               name="join_date" 
               value={formData.join_date}
               onChange={handleChange}
-              className="input input-bordered" 
+              className="input input-bordered input-sm sm:input-md w-full" 
               required 
             />
           </div>
-          <div className="form-control">
-            <label className="label">
+          <div className="form-control md:col-span-2">
+            <label className="label py-1">
               <span className="label-text">Expiry Date</span>
             </label>
             <input 
@@ -126,20 +126,24 @@ const MemberForm = ({ member, onSubmit, formTitle, submitButtonText, onCancel })
               name="end_date" 
               value={formData.end_date}
               onChange={handleChange}
-              className="input input-bordered" 
+              className="input input-bordered input-sm sm:input-md w-full" 
               required 
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-4 sm:mt-6">
           {onCancel && (
-            <button type="button" className="btn" onClick={onCancel}>
+            <button 
+              type="button" 
+              className="btn btn-sm sm:btn-md mt-2 sm:mt-0" 
+              onClick={onCancel}
+            >
               Cancel
             </button>
           )}
           <button 
             type="submit" 
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm sm:btn-md"
             disabled={isSubmitting}
           >
             {isSubmitting ? 

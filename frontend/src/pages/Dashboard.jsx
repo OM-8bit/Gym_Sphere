@@ -162,21 +162,23 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 p-4 overflow-x-hidden">
-      <div className="container mx-auto">
+    <div className="min-h-screen bg-base-200 p-2 sm:p-4 overflow-x-hidden">
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4">
         <Header 
           theme={theme} 
           toggleTheme={toggleTheme} 
           openAddModal={() => setShowAddModal(true)} 
         />
         
-        {flashMessages.map(msg => (
-          <FlashMessage 
-            key={msg.id} 
-            message={msg} 
-            onClose={() => removeFlashMessage(msg.id)} 
-          />
-        ))}
+        <div className="space-y-3">
+          {flashMessages.map(msg => (
+            <FlashMessage 
+              key={msg.id} 
+              message={msg} 
+              onClose={() => removeFlashMessage(msg.id)} 
+            />
+          ))}
+        </div>
         
         <SearchFilter 
           searchTerm={searchTerm} 
@@ -184,7 +186,7 @@ const Dashboard = () => {
           onFilterSelect={setCurrentFilter} 
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {filteredMembers.map(member => (
             <MemberCard 
               key={member.id} 
@@ -205,11 +207,11 @@ const Dashboard = () => {
       {/* Add Member Modal */}
       {showAddModal && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 overflow-y-auto"
           onClick={closeModal}
         >
           <div 
-            className="bg-base-100 rounded-lg shadow-xl max-w-3xl w-full mx-4"
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4"
             onClick={stopPropagation}
           >
             <div className="p-2 text-right">
@@ -220,7 +222,7 @@ const Dashboard = () => {
                 ✕
               </button>
             </div>
-            <div className="px-4 pb-6">
+            <div className="px-3 sm:px-4 pb-6">
               <MemberForm 
                 formTitle="Add New Member" 
                 submitButtonText="Add Member" 
@@ -235,11 +237,11 @@ const Dashboard = () => {
       {/* Edit Member Modal */}
       {showEditModal && currentMember && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 overflow-y-auto"
           onClick={closeModal}
         >
           <div 
-            className="bg-base-100 rounded-lg shadow-xl max-w-3xl w-full mx-4"
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4"
             onClick={stopPropagation}
           >
             <div className="p-2 text-right">
@@ -250,7 +252,7 @@ const Dashboard = () => {
                 ✕
               </button>
             </div>
-            <div className="px-4 pb-6">
+            <div className="px-3 sm:px-4 pb-6">
               <MemberForm 
                 member={currentMember}
                 formTitle="Edit Member" 

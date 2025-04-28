@@ -7,7 +7,7 @@ import {
 
 const FlashMessage = ({ message, onClose }) => {
   useEffect(() => {
-    // Reduced time to 3 seconds (from 5)
+    // Reduced time to 3 seconds
     const timer = setTimeout(() => {
       onClose();
     }, 3000);
@@ -42,11 +42,11 @@ const FlashMessage = ({ message, onClose }) => {
   };
 
   return (
-    <div className={`alert ${getAlertClass()} mb-4 shadow-md flex items-center`}>
-      <FontAwesomeIcon icon={getIcon()} className="mr-2" />
-      <span>{message.message}</span>
+    <div className={`alert ${getAlertClass()} py-2 px-3 sm:py-3 sm:px-4 shadow-md flex items-center text-sm relative`}>
+      <FontAwesomeIcon icon={getIcon()} className="mr-2 flex-shrink-0" />
+      <span className="pr-6">{message.message}</span>
       <button 
-        className="btn btn-ghost btn-xs absolute right-2" 
+        className="btn btn-ghost btn-xs absolute right-1 top-1/2 transform -translate-y-1/2" 
         onClick={() => onClose()}
       >
         ✕

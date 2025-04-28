@@ -15,3 +15,28 @@
 .alert {
   transition: all 0.5s ease-out;
 }
+
+/* Mobile improvements */
+@media (max-width: 640px) {
+  .card-hover:hover {
+    transform: scale(1.01) translateY(-1px);
+  }
+  
+  input[type="date"] {
+    font-size: 14px; /* Improve date input readability on mobile */
+  }
+}
+
+/* Fix for small dropdown menus */
+.dropdown-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Fix for z-index issues on modals */
+.modal-overlay {
+  z-index: 50;
+}
+.modal-content {
+  z-index: 51;
+}

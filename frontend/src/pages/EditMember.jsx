@@ -4,6 +4,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getMember, updateMember } from '../services/api';
 import MemberForm from '../components/MemberForm';
 import FlashMessage from '../components/FlashMessage';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 const EditMember = () => {
   const { id } = useParams();
@@ -25,9 +27,8 @@ const EditMember = () => {
       setLoading(true);
       const data = await getMember(id);
       
-      // Format dates if needed (backend returns HTML template data)
+      // Format dates
       if (data.member) {
-        // Convert date format from DD/MM/YYYY to YYYY-MM-DD for input fields
         ['join_date', 'end_date'].forEach(field => {
           try {
             if (data.member[field] && data.member[field].includes('/')) {
@@ -41,8 +42,8 @@ const EditMember = () => {
       }
       
       setMember(data.member);
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      console.error('Error fetching member:', error);
       addFlashMessage('error', 'Failed to load member details');
     } finally {
       setLoading(false);
@@ -53,9 +54,9 @@ const EditMember = () => {
     try {
       await updateMember(id, formData);
       addFlashMessage('success', 'Member updated successfully');
-      navigate('/'); // Navigate back to the members list after successful update
+      navigate('/');
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      console.error('Error updating member:', error);
       addFlashMessage('error', 'Failed to update member');
     }
   };
@@ -78,28 +79,36 @@ const EditMember = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 p-4 overflow-x-hidden">
-      <div className="container mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Edit Member</h1>
-          <Link to="/" className="btn btn-ghost">Back to List</Link>
+    <div className="min-h-screen bg-base-200 p-2 sm:p-4 overflow-x-hidden">
+      <div className="container mx-auto max-w-3xl px-2 sm:px-4">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold">Edit Member</h1>
+          <Link to="/" className="btn btn-ghost btn-sm sm:btn-md">
+            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+            <span className="hidden xs:inline">Back to List</span>
+            <span className="xs:hidden">Back</span>
+          </Link>
         </div>
 
-        {flashMessages.map(msg => (
-          <FlashMessage 
-            key={msg.id} 
-            message={msg} 
-            onClose={() => removeFlashMessage(msg.id)} 
-          />
-        ))}
+        <div className="space-y-3">
+          {flashMessages.map(msg => (
+            <FlashMessage 
+              key={msg.id} 
+              message={msg} 
+              onClose={() => removeFlashMessage(msg.id)} 
+            />
+          ))}
+        </div>
 
         {member && (
-          <MemberForm 
-            member={member}
-            formTitle="Edit Member" 
-            submitButtonText="Update Member" 
-            onSubmit={handleUpdateMember} 
-          />
+          <div className="bg-base-100 rounded-lg shadow-md">
+            <MemberForm 
+              member={member}
+              formTitle="Edit Member" 
+              submitButtonText="Update Member" 
+              onSubmit={handleUpdateMember} 
+            />
+          </div>
         )}
       </div>
     </div>
