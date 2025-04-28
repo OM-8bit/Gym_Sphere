@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from datetime import datetime
 from supabase import create_client, Client
 from typing import Any
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key='your-secret-key-123')
@@ -22,7 +23,14 @@ def url_for(request: Request, name: str, **path_params: Any) -> str:
 
 templates.env.globals['url_for'] = url_for
 
-# ... rest of the app.py code remains the same ...
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Allow React app running on port 3000
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/", name="index")
 async def index(request: Request):
@@ -50,19 +58,12 @@ async def index(request: Request):
                 except:
                     pass
 
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "members": members,
-            "messages": messages
-        })
+        # Return JSON response instead of template
+        return {"members": members, "messages": messages}
 
     except Exception as e:
         error_msg = f'Error loading members: {str(e)}'
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "members": [],
-            "messages": [{'category': 'error', 'message': error_msg}]
-        })
+        return {"members": [], "messages": [{'category': 'error', 'message': error_msg}]}
 
 @app.post("/add_member")
 async def add_member(
@@ -124,23 +125,12 @@ async def edit_member_get(request: Request, member_id: int):
         response = supabase.table('members').select('*').eq('id', member_id).execute()
         member = response.data[0] if response.data else None
         if not member:
-            request.session['messages'] = [{'category': 'error', 'message': 'Member not found'}]
-            return RedirectResponse(url=url_for(request, 'index'), status_code=303)
+            return {"error": "Member not found"}
 
-        for date_field in ['join_date', 'end_date']:
-            try:
-                dt = datetime.strptime(member[date_field], "%Y-%m-%d")
-                member[date_field] = dt.strftime("%Y-%m-%d")
-            except:
-                pass
-
-        return templates.TemplateResponse("edit_member.html", {
-            "request": request,
-            "member": member
-        })
+        # Return JSON response
+        return {"member": member}
     except Exception as e:
-        request.session['messages'] = [{'category': 'error', 'message': str(e)}]
-        return RedirectResponse(url=url_for(request, 'index'), status_code=303)
+        return {"error": str(e)}
 
 @app.post("/edit_member/{member_id}", name="edit_member_post")
 async def edit_member_post(

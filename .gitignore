@@ -1,5 +1,26 @@
-*.pyc
-__pycache__/
-*.db
-venv/
-myenv/
+# Project-wide .gitignore
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.code-workspace
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Temporary files
+.tmp/
+.temp/
+
+# Backup files
+*.bak
+*~
+*.swp
