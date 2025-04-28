@@ -25,7 +25,7 @@ const MemberCard = ({ member, onDelete, onEdit }) => {
   };
 
   return (
-    <div className="card-hover card bg-base-100 relative h-full">
+    <div className="card-hover card relative h-full">
       <div className="card-body p-3 sm:p-4">
         <div className="flex justify-between items-start mb-2">
           <h2 className="card-title text-base sm:text-lg break-words">{member.name}</h2>

@@ -3,15 +3,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Card styling with darker backgrounds */
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.card-hover:hover {
+
+/* Light theme card styling */
+html[data-theme="light"] .card-hover {
+  background-color: #f0f0f0; /* Darker than default light theme background */
+}
+
+/* Dark theme card styling */
+html[data-theme="dark"] .card-hover {
+  background-color: #1d232a; /* Darker than default dark theme background */
+}
+
+/* Hover effects with borders */
+html[data-theme="light"] .card-hover:hover {
   transform: scale(1.03) translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  border: 1px solid #000; /* Black border in light theme */
   z-index: 10;
 }
+
+html[data-theme="dark"] .card-hover:hover {
+  transform: scale(1.03) translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+  border: 1px solid #fff; /* White border in dark theme */
+  z-index: 10;
+}
+
 .alert {
   transition: all 0.5s ease-out;
 }
