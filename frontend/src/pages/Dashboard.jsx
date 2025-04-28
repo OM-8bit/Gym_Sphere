@@ -170,7 +170,7 @@ const Dashboard = () => {
           openAddModal={() => setShowAddModal(true)} 
         />
         
-        <div className="space-y-3">
+        <div className="space-y-4 mb-4">
           {flashMessages.map(msg => (
             <FlashMessage 
               key={msg.id} 

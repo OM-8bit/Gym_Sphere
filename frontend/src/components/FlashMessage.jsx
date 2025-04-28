@@ -42,7 +42,7 @@ const FlashMessage = ({ message, onClose }) => {
   };
 
   return (
-    <div className={`alert ${getAlertClass()} py-2 px-3 sm:py-3 sm:px-4 shadow-md flex items-center text-sm relative`}>
+    <div className={`alert ${getAlertClass()} py-2 px-3 sm:py-3 sm:px-4 shadow-md flex items-center text-sm relative mb-4`}>
       <FontAwesomeIcon icon={getIcon()} className="mr-2 flex-shrink-0" />
       <span className="pr-6">{message.message}</span>
       <button 
