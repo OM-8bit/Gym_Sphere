@@ -62,3 +62,25 @@ html[data-theme="dark"] .card-hover:hover {
 .modal-content {
   z-index: 51;
 }
+
+/* Add these styles to your existing CSS */
+
+.stats-card {
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Responsive adjustments for stats */
+@media (max-width: 640px) {
+  .stats-card {
+    padding: 0.75rem;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}

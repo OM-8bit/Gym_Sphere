@@ -6,6 +6,7 @@ import MemberCard from '../components/MemberCard';
 import SearchFilter from '../components/SearchFilter';
 import MemberForm from '../components/MemberForm';
 import FlashMessage from '../components/FlashMessage';
+import DashboardStats from '../components/DashboardStats';
 
 const Dashboard = () => {
   const [members, setMembers] = useState([]);
@@ -179,6 +180,9 @@ const Dashboard = () => {
             />
           ))}
         </div>
+        
+        {/* Add Dashboard Stats component here */}
+        <DashboardStats members={members} />
         
         <SearchFilter 
           searchTerm={searchTerm} 
