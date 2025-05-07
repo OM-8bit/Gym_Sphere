@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { getMembers, deleteMember, addMember, updateMember } from '../services/api';
 import Header from '../components/Header';
 import MemberCard from '../components/MemberCard';
+import MemberListItem from '../components/MemberListItem';
 import SearchFilter from '../components/SearchFilter';
 import MemberForm from '../components/MemberForm';
 import FlashMessage from '../components/FlashMessage';
@@ -13,6 +14,10 @@ const Dashboard = () => {
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentFilter, setCurrentFilter] = useState('All');
+  const [viewMode, setViewMode] = useState(() => {
+    // Get view mode from localStorage or default to 'grid'
+    return localStorage.getItem('viewMode') || 'grid';
+  });
   const [theme, setTheme] = useState(() => {
     // Get theme from localStorage or default to 'light'
     return localStorage.getItem('theme') || 'light';
@@ -45,6 +50,25 @@ const Dashboard = () => {
       document.body.style.overflow = 'auto';
     };
   }, [showAddModal, showEditModal]);
+
+  useEffect(() => {
+    // Force grid view on small screens
+    const handleResize = () => {
+      if (window.innerWidth < 640 && viewMode === 'list') {
+        setViewMode('grid');
+        localStorage.setItem('viewMode', 'grid');
+      }
+    };
+    
+    // Initial check
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   const fetchMembers = async () => {
     try {
@@ -162,6 +186,11 @@ const Dashboard = () => {
     e.stopPropagation();
   };
 
+  const handleViewChange = (view) => {
+    setViewMode(view);
+    localStorage.setItem('viewMode', view);
+  };
+
   return (
     <div className="min-h-screen bg-base-200 p-2 sm:p-4 overflow-x-hidden">
       <div className="container mx-auto max-w-7xl px-2 sm:px-4">
@@ -181,31 +210,45 @@ const Dashboard = () => {
           ))}
         </div>
         
-        {/* Add Dashboard Stats component here */}
         <DashboardStats members={members} />
         
         <SearchFilter 
           searchTerm={searchTerm} 
           onSearchChange={setSearchTerm} 
-          onFilterSelect={setCurrentFilter} 
+          onFilterSelect={setCurrentFilter}
+          viewMode={viewMode}
+          onViewChange={handleViewChange}
         />
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-          {filteredMembers.map(member => (
-            <MemberCard 
-              key={member.id} 
-              member={member} 
-              onDelete={handleDelete}
-              onEdit={() => openEditModal(member)}
-            />
-          ))}
-          
-          {filteredMembers.length === 0 && (
-            <div className="col-span-full text-center py-10">
-              <p className="text-gray-500">No members found</p>
-            </div>
-          )}
-        </div>
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+            {filteredMembers.map(member => (
+              <MemberCard 
+                key={member.id} 
+                member={member} 
+                onDelete={handleDelete}
+                onEdit={() => openEditModal(member)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredMembers.map(member => (
+              <MemberListItem
+                key={member.id}
+                member={member}
+                onDelete={handleDelete}
+                onEdit={() => openEditModal(member)}
+              />
+            ))}
+          </div>
+        )}
+        
+        {filteredMembers.length === 0 && (
+          <div className="text-center py-10">
+            <p className="text-gray-500">No members found</p>
+          </div>
+        )}
       </div>
       
       {/* Add Member Modal */}

@@ -1,8 +1,9 @@
 // frontend/src/components/SearchFilter.jsx
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
+import ViewToggle from './ViewToggle';
 
-const SearchFilter = ({ searchTerm, onSearchChange, onFilterSelect }) => {
+const SearchFilter = ({ searchTerm, onSearchChange, onFilterSelect, viewMode, onViewChange }) => {
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5 sm:mb-8">
       <div className="flex-1 relative">
@@ -19,19 +20,24 @@ const SearchFilter = ({ searchTerm, onSearchChange, onFilterSelect }) => {
           />
         </div>
       </div>
-      <div className="dropdown dropdown-end">
-        <div tabIndex={0} role="button" className="btn btn-sm sm:btn-md btn-ghost w-full sm:w-auto justify-between">
-          <div className="flex items-center">
-            <FontAwesomeIcon icon={faFilter} className="mr-2" /> Filter
+      
+      <div className="flex items-center gap-2">
+        <ViewToggle currentView={viewMode} onViewChange={onViewChange} />
+        
+        <div className="dropdown dropdown-end">
+          <div tabIndex={0} role="button" className="btn btn-sm sm:btn-md btn-ghost">
+            <div className="flex items-center">
+              <FontAwesomeIcon icon={faFilter} className="mr-2" /> 
+              <span className="hidden xs:inline">Filter</span>
+            </div>
           </div>
-          <span className="sm:hidden">▼</span>
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+            <li><a onClick={() => onFilterSelect('Active')}>Active Members</a></li>
+            <li><a onClick={() => onFilterSelect('Near Expiry')}>Near Expiry</a></li>
+            <li><a onClick={() => onFilterSelect('Expired')}>Expired Members</a></li>
+            <li><a onClick={() => onFilterSelect('All')}>All Members</a></li>
+          </ul>
         </div>
-        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-          <li><a onClick={() => onFilterSelect('Active')}>Active Members</a></li>
-          <li><a onClick={() => onFilterSelect('Near Expiry')}>Near Expiry</a></li>
-          <li><a onClick={() => onFilterSelect('Expired')}>Expired Members</a></li>
-          <li><a onClick={() => onFilterSelect('All')}>All Members</a></li>
-        </ul>
       </div>
     </div>
   );

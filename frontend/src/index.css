@@ -84,3 +84,24 @@ html[data-theme="dark"] .card-hover:hover {
     font-size: 1.25rem;
   }
 }
+
+/* Add these styles to the end of your existing CSS */
+
+/* List view hover effects */
+.member-list-view .card-hover:hover {
+  transform: translateX(4px);
+  border-left: 3px solid;
+}
+
+html[data-theme="light"] .member-list-view .card-hover:hover {
+  border-left-color: #000;
+}
+
+html[data-theme="dark"] .member-list-view .card-hover:hover {
+  border-left-color: #fff;
+}
+
+/* Transition for view switching */
+.grid-view, .list-view {
+  transition: opacity 0.3s ease-in-out;
+}
