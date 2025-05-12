@@ -14,11 +14,11 @@ const MemberListItem = ({ member, onDelete, onEdit }) => {
   const getBadgeClass = (status) => {
     switch (status) {
       case 'Active':
-        return 'badge-success';
+        return 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100';
       case 'Near Expiry':
-        return 'badge-warning';
-      default:
-        return 'badge-error';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100';
+      default: // Expired
+        return 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100';
     }
   };
 
@@ -29,7 +29,7 @@ const MemberListItem = ({ member, onDelete, onEdit }) => {
           {/* Member name and status */}
           <div className="flex-1">
             <h3 className="text-base sm:text-lg font-semibold">{member.name}</h3>
-            <span className={`badge ${getBadgeClass(member.status)} text-xs mt-1`}>
+            <span className={`badge ${getBadgeClass(member.status)}`}>
               {member.status}
             </span>
           </div>

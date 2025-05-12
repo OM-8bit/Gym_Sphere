@@ -79,7 +79,7 @@ const EditMember = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 p-2 sm:p-4 overflow-x-hidden">
+    <div className="min-h-screen bg-base-200 p-2 sm:p-4 pt-2 overflow-x-hidden">
       <div className="container mx-auto max-w-3xl px-2 sm:px-4">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold">Edit Member</h1>

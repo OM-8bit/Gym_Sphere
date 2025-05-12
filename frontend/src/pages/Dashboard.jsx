@@ -6,37 +6,39 @@ import MemberCard from '../components/MemberCard';
 import MemberListItem from '../components/MemberListItem';
 import SearchFilter from '../components/SearchFilter';
 import MemberForm from '../components/MemberForm';
-import FlashMessage from '../components/FlashMessage';
 import DashboardStats from '../components/DashboardStats';
+import { useToast } from '../components/ToastContainer';
+import ConfirmationModal from '../components/ConfirmationModal';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Dashboard = () => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentFilter, setCurrentFilter] = useState('All');
+  const [activeFilters, setActiveFilters] = useState([]);
   const [viewMode, setViewMode] = useState(() => {
     // Get view mode from localStorage or default to 'grid'
     return localStorage.getItem('viewMode') || 'grid';
   });
-  const [theme, setTheme] = useState(() => {
-    // Get theme from localStorage or default to 'light'
-    return localStorage.getItem('theme') || 'light';
-  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentMember, setCurrentMember] = useState(null);
-  const [flashMessages, setFlashMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     fetchMembers();
     
     // Set initial theme
-    document.documentElement.setAttribute('data-theme', theme);
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
   useEffect(() => {
     filterMembers();
-  }, [members, searchTerm, currentFilter]);
+  }, [members, searchTerm, activeFilters]);
 
   // Add body lock when modal is open
   useEffect(() => {
@@ -72,16 +74,21 @@ const Dashboard = () => {
 
   const fetchMembers = async () => {
     try {
+      setLoading(true);
       const data = await getMembers();
       setMembers(data.members);
       setFilteredMembers(data.members);
       
       if (data.messages && data.messages.length > 0) {
-        setFlashMessages(data.messages);
+        data.messages.forEach(msg => {
+          addToast(msg.category, msg.message);
+        });
       }
     } catch (error) {
       console.error('Error loading members:', error);
-      addFlashMessage('error', 'Failed to load members');
+      addToast('error', 'Failed to load members');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,10 +96,10 @@ const Dashboard = () => {
     try {
       await deleteMember(memberId);
       setMembers(members.filter(member => member.id !== memberId));
-      addFlashMessage('success', 'Member deleted successfully');
+      addToast('success', 'Member deleted successfully');
     } catch (error) {
       console.error('Error deleting member:', error);
-      addFlashMessage('error', 'Failed to delete member');
+      addToast('error', 'Failed to delete member');
     }
   };
 
@@ -100,11 +107,11 @@ const Dashboard = () => {
     try {
       await addMember(formData);
       setShowAddModal(false);
-      addFlashMessage('success', 'Member added successfully');
+      addToast('success', 'Member added successfully');
       fetchMembers();
     } catch (error) {
       console.error('Error adding member:', error);
-      addFlashMessage('error', 'Failed to add member');
+      addToast('error', 'Failed to add member');
     }
   };
 
@@ -112,36 +119,24 @@ const Dashboard = () => {
     try {
       await updateMember(currentMember.id, formData);
       setShowEditModal(false);
-      addFlashMessage('success', 'Member updated successfully');
+      addToast('success', 'Member updated successfully');
       fetchMembers();
     } catch (error) {
       console.error('Error updating member:', error);
-      addFlashMessage('error', 'Failed to update member');
+      addToast('error', 'Failed to update member');
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme); // Save theme to localStorage
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
-
-  const addFlashMessage = (category, message) => {
-    const newMessage = { id: Date.now(), category, message };
-    setFlashMessages(prev => [...prev, newMessage]);
-  };
-
-  const removeFlashMessage = (id) => {
-    setFlashMessages(prev => prev.filter(msg => msg.id !== id));
-  };
-
+  // Modify the filterMembers function to handle single filter selection instead of combinations
   const filterMembers = () => {
     let filtered = [...members];
     
-    // Apply status filter
-    if (currentFilter !== 'All') {
-      filtered = filtered.filter(member => member.status === currentFilter);
+    // Apply status filter (now we'll only have one status filter at a time)
+    if (activeFilters.length > 0) {
+      const statusFilter = activeFilters[0]; // Just use the first filter
+      if (['Active', 'Near Expiry', 'Expired'].includes(statusFilter)) {
+        filtered = filtered.filter(member => member.status === statusFilter);
+      }
     }
     
     // Apply search filter
@@ -155,6 +150,29 @@ const Dashboard = () => {
     }
     
     setFilteredMembers(filtered);
+  };
+
+  // Modify the handleFilterSelect function to only allow one filter at a time
+  const handleFilterSelect = (filter) => {
+    if (filter === 'All') {
+      setActiveFilters([]);
+      return;
+    }
+    
+    // Check if this filter is already active
+    const isActive = activeFilters.includes(filter);
+    
+    if (isActive) {
+      // If active, remove it (clear filter)
+      setActiveFilters([]);
+    } else {
+      // If not active, replace any existing filter with this one
+      setActiveFilters([filter]);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters([]);
   };
 
   const openEditModal = (member) => {
@@ -192,62 +210,77 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 p-2 sm:p-4 overflow-x-hidden">
-      <div className="container mx-auto max-w-7xl px-2 sm:px-4">
-        <Header 
-          theme={theme} 
-          toggleTheme={toggleTheme} 
-          openAddModal={() => setShowAddModal(true)} 
-        />
-        
-        <div className="space-y-4 mb-4">
-          {flashMessages.map(msg => (
-            <FlashMessage 
-              key={msg.id} 
-              message={msg} 
-              onClose={() => removeFlashMessage(msg.id)} 
-            />
-          ))}
-        </div>
-        
-        <DashboardStats members={members} />
-        
-        <SearchFilter 
-          searchTerm={searchTerm} 
-          onSearchChange={setSearchTerm} 
-          onFilterSelect={setCurrentFilter}
-          viewMode={viewMode}
-          onViewChange={handleViewChange}
-        />
-        
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-            {filteredMembers.map(member => (
-              <MemberCard 
-                key={member.id} 
-                member={member} 
-                onDelete={handleDelete}
-                onEdit={() => openEditModal(member)}
-              />
-            ))}
-          </div>
+    <div className="min-h-screen bg-base-200 overflow-x-hidden">
+      <Header 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        openAddModal={() => setShowAddModal(true)} 
+      />
+      
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4 pt-2">
+        {loading ? (
+          <LoadingSkeleton />
         ) : (
-          <div className="space-y-2">
-            {filteredMembers.map(member => (
-              <MemberListItem
-                key={member.id}
-                member={member}
-                onDelete={handleDelete}
-                onEdit={() => openEditModal(member)}
-              />
-            ))}
-          </div>
-        )}
-        
-        {filteredMembers.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-gray-500">No members found</p>
-          </div>
+          <>
+            {/* Pass handleFilterSelect to DashboardStats */}
+            <DashboardStats 
+              members={members} 
+              onFilterSelect={handleFilterSelect} 
+            />
+            
+            <SearchFilter 
+              searchTerm={searchTerm} 
+              onSearchChange={setSearchTerm} 
+              onFilterSelect={handleFilterSelect}
+              activeFilters={activeFilters}
+              onClearFilters={handleClearFilters}
+              viewMode={viewMode}
+              onViewChange={handleViewChange}
+            />
+            
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+                {filteredMembers.map(member => (
+                  <MemberCard 
+                    key={member.id} 
+                    member={member} 
+                    onDelete={handleDelete}
+                    onEdit={() => openEditModal(member)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2 member-list-view">
+                {filteredMembers.map(member => (
+                  <MemberListItem
+                    key={member.id}
+                    member={member}
+                    onDelete={handleDelete}
+                    onEdit={() => openEditModal(member)}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {filteredMembers.length === 0 && (
+              <div className="text-center py-10 bg-base-100 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-2">No members found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm 
+                    ? "No members match your search criteria." 
+                    : activeFilters.length > 0 
+                      ? "No members match the selected filters." 
+                      : "There are no members in the system yet."}
+                </p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  Add your first member
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
       
@@ -258,7 +291,7 @@ const Dashboard = () => {
           onClick={closeModal}
         >
           <div 
-            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4"
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4 animate-fade-in"
             onClick={stopPropagation}
           >
             <div className="p-2 text-right">
@@ -288,7 +321,7 @@ const Dashboard = () => {
           onClick={closeModal}
         >
           <div 
-            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4"
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4 animate-fade-in"
             onClick={stopPropagation}
           >
             <div className="p-2 text-right">
