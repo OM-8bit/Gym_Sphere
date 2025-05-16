@@ -49,19 +49,17 @@ const StatCard = ({ title, value, icon, color, onClick }) => {
 
   return (
     <div 
-      className="transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer" 
+      className={`bg-gradient-to-br ${styles.gradient} backdrop-blur-sm rounded-xl border ${styles.borderColor} shadow-sm transform transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer`}
       onClick={onClick}
     >
-      <div className={`bg-gradient-to-br ${styles.gradient} backdrop-blur-sm rounded-xl border ${styles.borderColor} shadow-sm`}>
-        <div className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-base-content/70">{title}</h2>
-              <div className="mt-2 text-3xl font-bold">{value}</div>
-            </div>
-            <div className={`${styles.iconBg} p-3 rounded-lg`}>
-              <FontAwesomeIcon icon={icon} className={`text-xl ${styles.iconColor}`} />
-            </div>
+      <div className="p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-base-content/70">{title}</h2>
+            <div className="mt-2 text-3xl font-bold">{value}</div>
+          </div>
+          <div className={`${styles.iconBg} p-3 rounded-lg`}>
+            <FontAwesomeIcon icon={icon} className={`text-xl ${styles.iconColor}`} />
           </div>
         </div>
       </div>
