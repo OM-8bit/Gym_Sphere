@@ -53,12 +53,12 @@ const Dashboard = () => {
     };
   }, [showAddModal, showEditModal]);
 
+  // Update the useEffect for handling view mode based on screen size
   useEffect(() => {
     // Force grid view on small screens
     const handleResize = () => {
-      if (window.innerWidth < 640 && viewMode === 'list') {
+      if (window.innerWidth < 640) {
         setViewMode('grid');
-        localStorage.setItem('viewMode', 'grid');
       }
     };
     
@@ -70,7 +70,7 @@ const Dashboard = () => {
     
     // Cleanup
     return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  }, []);
 
   const fetchMembers = async () => {
     try {
@@ -204,9 +204,13 @@ const Dashboard = () => {
     e.stopPropagation();
   };
 
+  // Update the handleViewChange function
   const handleViewChange = (view) => {
-    setViewMode(view);
-    localStorage.setItem('viewMode', view);
+    // Only allow changing view on sm screens and larger
+    if (window.innerWidth >= 640 || view === 'grid') {
+      setViewMode(view);
+      localStorage.setItem('viewMode', view);
+    }
   };
 
   return (

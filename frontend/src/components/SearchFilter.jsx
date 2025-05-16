@@ -1,5 +1,4 @@
 // frontend/src/components/SearchFilter.jsx
-import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSearch, faFilter, faTimesCircle, faList, 
@@ -8,7 +7,7 @@ import {
 
 const ViewToggle = ({ currentView, onViewChange }) => {
   return (
-    <div className="btn-group">
+    <div className="btn-group hidden sm:flex">
       <button 
         className={`btn btn-sm ${currentView === 'grid' ? 'btn-active' : ''}`} 
         onClick={() => onViewChange('grid')}
@@ -62,10 +61,10 @@ const SearchFilter = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end w-full sm:w-auto gap-2">
           <ViewToggle currentView={viewMode} onViewChange={onViewChange} />
           
-          <div className="dropdown dropdown-end">
+          <div className="dropdown dropdown-end ml-auto sm:ml-0">
             <div tabIndex={0} role="button" className="btn btn-sm sm:btn-md">
               <div className="flex items-center">
                 <FontAwesomeIcon icon={faFilter} className="mr-2" /> 
@@ -76,7 +75,7 @@ const SearchFilter = ({
                 <FontAwesomeIcon icon={faChevronDown} className="ml-2 opacity-70 text-xs" />
               </div>
             </div>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-60">
+            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-60 right-0">
               <li><a onClick={() => onFilterSelect('All')}>All Members</a></li>
               <li><a onClick={() => onFilterSelect('Active')}>Active Members</a></li>
               <li><a onClick={() => onFilterSelect('Near Expiry')}>Near Expiry</a></li>
