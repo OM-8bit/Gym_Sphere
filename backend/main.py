@@ -172,7 +172,7 @@ async def login(user: UserLogin):
 @app.post("/api/members")
 async def add_member(member: MemberCreate, current_user=Depends(get_current_user)):
     try:
-        exists = supabase_admin.table("members").select("id").eq("email", member.email).eq("owner_email", current_user["email"]).execute()
+        exists = supabase_admin.table("members").select("id").eq("email", member.email).ilike("owner_email", current_user["email"]).execute()
         if exists.data:
             raise HTTPException(status_code=400, detail="Member with this email already exists.")
 
@@ -193,7 +193,7 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
             "subscription_start": start_date.isoformat(),
             "subscription_end": end_date.isoformat(),
             "is_active": True,
-            "owner_email": current_user["email"]
+            "owner_email": current_user["email"]  # Use the email from token (lowercase)
         }
 
         result = supabase_admin.table("members").insert(member_data).execute()
@@ -207,7 +207,8 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
 @app.get("/api/members")
 async def list_members(current_user=Depends(get_current_user)):
     try:
-        result = supabase_admin.table("members").select("*").eq("owner_email", current_user["email"]).execute()
+        # Make email comparison case-insensitive
+        result = supabase_admin.table("members").select("*").ilike("owner_email", current_user["email"]).execute()
         return result.data if result.data else []
     except Exception as e:
         logger.error(f"List members error: {str(e)}")
@@ -216,7 +217,7 @@ async def list_members(current_user=Depends(get_current_user)):
 @app.delete("/api/members/{id}")
 async def delete_member(id: int, current_user=Depends(get_current_user)):
     try:
-        exists = supabase_admin.table("members").select("id").eq("id", id).eq("owner_email", current_user["email"]).execute()
+        exists = supabase_admin.table("members").select("id").eq("id", id).ilike("owner_email", current_user["email"]).execute()
         if not exists.data:
             raise HTTPException(status_code=404, detail="Member not found")
 
@@ -309,7 +310,7 @@ from datetime import datetime, timezone
 @app.get("/api/dashboard/stats")
 async def dashboard_stats(current_user: dict = Depends(get_current_user)):
     try:
-        members_result = supabase_admin.table("members").select("*").eq("owner_email", current_user["email"]).execute()
+        members_result = supabase_admin.table("members").select("*").ilike("owner_email", current_user["email"]).execute()
         members = members_result.data or []
 
         total_members = len(members)

@@ -92,6 +92,7 @@ ENV/
 env/
 env.bak/
 venv.bak/
+venv-ak27/
 
 # Spyder project settings
 .spyderproject
