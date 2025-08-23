@@ -14,33 +14,42 @@ import jwt
 from passlib.context import CryptContext
 import logging
 
+
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 # Env vars
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
+
 if not (SUPABASE_URL and SUPABASE_ANON_KEY):
     raise ValueError("Missing Supabase configuration.")
+
 
 # Clients
 supabase_auth = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else supabase_auth
 
+
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
+
 # Default password for new members
 DEFAULT_MEMBER_PASSWORD = "ABC1234"
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
+
 app = FastAPI(title="GymSphere API", version="1.0")
+
 
 # CORS
 app.add_middleware(
@@ -51,6 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Models
 class UserCreate(BaseModel):
     email: EmailStr
@@ -58,26 +68,40 @@ class UserCreate(BaseModel):
     full_name: str
     gym_name: Optional[str] = None
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
+# UPDATED: Added card_number field for card system
 class MemberCreate(BaseModel):
     full_name: str
     email: EmailStr
     phone: Optional[str] = None
     membership_type: str
-    card_id: Optional[str] = None
-    create_login: Optional[bool] = True  # Option to create login credentials
+    card_number: Optional[str] = None  # CHANGED: card_id -> card_number
+    create_login: Optional[bool] = True
+
+
+# NEW: Card system models
+class CardBatch(BaseModel):
+    start: int
+    end: int
+    prefix: str
+
+
+class CardVerifyRequest(BaseModel):
+    card_number: str  # CHANGED: card_id -> card_number
+
 
 class QRRequest(BaseModel):
     member_id: int
 
+
 class QRVerifyRequest(BaseModel):
     qr_data: str
 
-class CardVerifyRequest(BaseModel):
-    card_id: str
 
 # Auth helpers
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -88,6 +112,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 def verify_token(token: str):
     try:
@@ -101,13 +126,16 @@ def verify_token(token: str):
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     email = verify_token(credentials.credentials)
     return {"email": email}
 
+
 @app.get("/")
 async def root():
     return {"message": "GymSphere API running", "version": app.version}
+
 
 @app.post("/api/auth/register")
 async def register(user: UserCreate):
@@ -133,6 +161,7 @@ async def register(user: UserCreate):
             raise HTTPException(status_code=409, detail="Email already registered")
         logger.error(f"Registration error: {str(e)}")
         raise HTTPException(status_code=400, detail="Registration failed")
+
 
 @app.post("/api/auth/login")
 async def login(user: UserLogin):
@@ -173,6 +202,62 @@ async def login(user: UserLogin):
         logger.error(f"Login error: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+
+# NEW: Card Management Endpoints
+@app.post("/api/admin/add-card-batch")
+async def add_card_batch(batch: CardBatch, current_user=Depends(get_current_user)):
+    """Add a batch of cards to inventory"""
+    try:
+        cards = []
+        for i in range(batch.start, batch.end + 1):
+            card_number = f"{batch.prefix}{i:03d}"
+            cards.append({
+                "card_number": card_number,
+                "status": "available",
+                "gym_owner_email": current_user["email"],
+                "created_at": datetime.now().isoformat()
+            })
+        
+        # Insert cards into card_inventory table
+        result = supabase_admin.table("card_inventory").insert(cards).execute()
+        
+        return {
+            "message": f"Added {len(cards)} cards to inventory",
+            "cards_added": len(cards),
+            "range": f"{batch.prefix}{batch.start:03d} to {batch.prefix}{batch.end:03d}"
+        }
+    except Exception as e:
+        logger.error(f"Add card batch error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/admin/available-cards")
+async def get_available_cards(current_user=Depends(get_current_user)):
+    """Get all available cards for this gym owner"""
+    try:
+        result = supabase_admin.table("card_inventory").select("card_number").eq("gym_owner_email", current_user["email"]).eq("status", "available").execute()
+        return result.data
+    except Exception as e:
+        logger.error(f"Get available cards error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/admin/card-inventory")
+async def get_card_inventory(current_user=Depends(get_current_user)):
+    """Get full card inventory for this gym"""
+    try:
+        result = supabase_admin.table("card_inventory").select("""
+            *,
+            members(full_name, email)
+        """).eq("gym_owner_email", current_user["email"]).execute()
+        
+        return result.data
+    except Exception as e:
+        logger.error(f"Get card inventory error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# UPDATED: Member creation with card assignment
 @app.post("/api/members")
 async def add_member(member: MemberCreate, current_user=Depends(get_current_user)):
     try:
@@ -180,6 +265,14 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
         exists = supabase_admin.table("members").select("id").eq("email", member.email).eq("owner_email", current_user["email"]).execute()
         if exists.data:
             raise HTTPException(status_code=400, detail="Member with this email already exists.")
+
+        # NEW: Check if card is available if provided
+        if member.card_number:
+            card_check = supabase_admin.table("card_inventory").select("*").eq("card_number", member.card_number).eq("gym_owner_email", current_user["email"]).single().execute()
+            if not card_check.data:
+                raise HTTPException(status_code=400, detail="Card number not found")
+            if card_check.data["status"] != "available":
+                raise HTTPException(status_code=400, detail="Card not available")
 
         # Calculate subscription dates
         start_date = datetime.now()
@@ -190,13 +283,13 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
         else:
             raise HTTPException(status_code=400, detail="Invalid membership type.")
 
-        # Create member data
+        # UPDATED: Create member data with card_number
         member_data = {
             "full_name": member.full_name,
             "email": member.email,
             "phone": member.phone,
             "membership_type": member.membership_type,
-            "card_id": member.card_id,
+            "card_number": member.card_number,  # CHANGED: card_id -> card_number
             "subscription_start": start_date.isoformat(),
             "subscription_end": end_date.isoformat(),
             "is_active": True,
@@ -210,6 +303,14 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
 
         created_member = result.data[0]
 
+        # NEW: Update card status to assigned if card was provided
+        if member.card_number:
+            supabase_admin.table("card_inventory").update({
+                "status": "assigned",
+                "assigned_to_member_id": created_member["id"],
+                "assigned_date": datetime.now().isoformat()
+            }).eq("card_number", member.card_number).execute()
+
         # Create login credentials if requested
         auth_created = False
         auth_error = None
@@ -220,10 +321,11 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
                 auth_response = supabase_admin.auth.admin.create_user({
                     "email": member.email,
                     "password": DEFAULT_MEMBER_PASSWORD,
-                    "email_confirm": True,  # Skip email confirmation
+                    "email_confirm": True,
                     "user_metadata": {
                         "full_name": member.full_name,
                         "membership_type": member.membership_type,
+                        "card_number": member.card_number,  # NEW: Include card number
                         "is_gym_member": True
                     }
                 })
@@ -244,12 +346,69 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
             "login_created": auth_created,
             "default_password": DEFAULT_MEMBER_PASSWORD if auth_created else None,
             "auth_error": auth_error,
-            "message": f"Member added successfully{'! Login credentials created with password: ' + DEFAULT_MEMBER_PASSWORD if auth_created else ' but login creation failed.'}"
+            "message": f"Member added successfully{'! Card ' + member.card_number + ' assigned.' if member.card_number else ''} {'Login credentials created with password: ' + DEFAULT_MEMBER_PASSWORD if auth_created else ' Login creation failed.'}"
         }
         
     except Exception as e:
         logger.error(f"Add member error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# NEW: Card verification endpoint for gym entrance
+@app.post("/api/card/verify")
+async def verify_card(request: CardVerifyRequest):
+    """Verify card access at gym entrance"""
+    try:
+        # Find member by card number
+        member_result = supabase_admin.table("members").select("*").eq("card_number", request.card_number).single().execute()
+        
+        if not member_result.data:
+            return {
+                "access_granted": False,
+                "message": "❌ Invalid Card",
+                "member_name": "Unknown"
+            }
+            
+        member = member_result.data[0]
+        
+        # Check subscription status
+        subscription_end = datetime.fromisoformat(member["subscription_end"].replace("Z", "+00:00"))
+        is_active = subscription_end > datetime.now() and member["is_active"]
+        
+        # Log the access attempt
+        log_data = {
+            "member_id": member["id"],
+            "access_type": "card",
+            "access_granted": is_active,
+            "card_number": request.card_number,
+            "timestamp": datetime.now().isoformat()
+        }
+        supabase_admin.table("access_logs").insert(log_data).execute()
+        
+        if is_active:
+            return {
+                "access_granted": True,
+                "message": f"✅ Welcome {member['full_name']}!",
+                "member_name": member["full_name"],
+                "membership_type": member["membership_type"],
+                "subscription_end": member["subscription_end"]
+            }
+        else:
+            return {
+                "access_granted": False,
+                "message": f"❌ Subscription Expired",
+                "member_name": member["full_name"],
+                "subscription_end": member["subscription_end"]
+            }
+            
+    except Exception as e:
+        logger.error(f"Card verify error: {str(e)}")
+        return {
+            "access_granted": False,
+            "message": "❌ System Error",
+            "member_name": "Unknown"
+        }
+
 
 @app.get("/api/members")
 async def list_members(current_user=Depends(get_current_user)):
@@ -259,6 +418,7 @@ async def list_members(current_user=Depends(get_current_user)):
     except Exception as e:
         logger.error(f"List members error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.delete("/api/members/{id}")
 async def delete_member(id: int, current_user=Depends(get_current_user)):
@@ -270,12 +430,19 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
         
         member = member_result.data[0]
         
+        # NEW: Release card back to available status
+        if member.get("card_number"):
+            supabase_admin.table("card_inventory").update({
+                "status": "available",
+                "assigned_to_member_id": None,
+                "assigned_date": None
+            }).eq("card_number", member["card_number"]).execute()
+        
         # Delete from members table
         supabase_admin.table("members").delete().eq("id", id).execute()
         
         # Optionally delete the auth user as well
         try:
-            # Find and delete the auth user
             users_result = supabase_admin.auth.admin.list_users()
             if users_result.users:
                 for user in users_result.users:
@@ -286,12 +453,12 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
         except Exception as auth_err:
             logger.warning(f"Could not delete auth user for {member['email']}: {auth_err}")
         
-        return {"message": "Member deleted successfully."}
+        return {"message": "Member deleted successfully and card released."}
     except Exception as e:
         logger.error(f"Delete member error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# NEW ENDPOINT: Reset member password to default
+
 @app.post("/api/members/{member_id}/reset-password")
 async def reset_member_password(member_id: int, current_user=Depends(get_current_user)):
     try:
@@ -324,7 +491,7 @@ async def reset_member_password(member_id: int, current_user=Depends(get_current
         logger.error(f"Reset password error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# NEW ENDPOINT: Get member login credentials
+
 @app.get("/api/members/{member_id}/credentials")
 async def get_member_credentials(member_id: int, current_user=Depends(get_current_user)):
     try:
@@ -338,6 +505,7 @@ async def get_member_credentials(member_id: int, current_user=Depends(get_curren
         return {
             "member_name": member["full_name"],
             "email": member["email"],
+            "card_number": member.get("card_number", "Not assigned"),  # NEW: Include card number
             "default_password": DEFAULT_MEMBER_PASSWORD,
             "member_portal_url": "http://localhost:5173",
             "instructions": "Share these credentials with the member to access their portal."
@@ -346,6 +514,7 @@ async def get_member_credentials(member_id: int, current_user=Depends(get_curren
     except Exception as e:
         logger.error(f"Get credentials error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.post("/api/qr/generate")
 async def generate_qr(request: QRRequest):
@@ -376,12 +545,14 @@ async def generate_qr(request: QRRequest):
             "member": {
                 "id": member["id"],
                 "name": member["full_name"],
+                "card_number": member.get("card_number"),  # NEW: Include card number
                 "subscription_end": member["subscription_end"],
             },
         }
     except Exception as e:
         logger.error(f"QR generation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.post("/api/qr/verify")
 async def verify_qr(request: QRVerifyRequest):
@@ -419,12 +590,14 @@ async def verify_qr(request: QRVerifyRequest):
                 "id": member["id"],
                 "name": member["full_name"],
                 "membership_type": member["membership_type"],
+                "card_number": member.get("card_number"),  # NEW: Include card number
             },
             "message": "Access granted",
         }
     except Exception as e:
         logger.error(f"QR verify error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.get("/api/dashboard/stats")
 async def dashboard_stats(current_user: dict = Depends(get_current_user)):
@@ -450,21 +623,34 @@ async def dashboard_stats(current_user: dict = Depends(get_current_user)):
             if datetime.fromisoformat(member["created_at"].replace('Z', '+00:00')) >= start_of_month
         )
 
+        # NEW: Card statistics
+        cards_result = supabase_admin.table("card_inventory").select("status").eq("gym_owner_email", current_user["email"]).execute()
+        cards = cards_result.data or []
+        
+        total_cards = len(cards)
+        available_cards = sum(1 for card in cards if card["status"] == "available")
+        assigned_cards = sum(1 for card in cards if card["status"] == "assigned")
+
         return {
             "total_members": total_members,
             "active_members": active_members,
             "expired_members": expired_members,
             "joins_this_month": joins_this_month,
-            "weekly_access_count": 0
+            "weekly_access_count": 0,
+            # NEW: Card stats
+            "total_cards": total_cards,
+            "available_cards": available_cards,
+            "assigned_cards": assigned_cards
         }
     except Exception as e:
         logger.error(f"Dashboard stats error: {str(e)}")
         raise HTTPException(status_code=400, detail="Failed to fetch dashboard stats")
 
+
 @app.get("/api/access/logs")
 async def get_access_logs():
     try:
-        result = supabase_admin.table("access_logs").select("*, members(full_name, email)").order("created_at", desc=True).limit(100).execute()
+        result = supabase_admin.table("access_logs").select("*, members(full_name, email, card_number)").order("created_at", desc=True).limit(100).execute()
         return result.data
     except Exception as e:
         logger.error(f"Access logs error: {str(e)}")
