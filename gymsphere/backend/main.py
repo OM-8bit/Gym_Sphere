@@ -646,7 +646,6 @@ async def dashboard_stats(current_user: dict = Depends(get_current_user)):
         logger.error(f"Dashboard stats error: {str(e)}")
         raise HTTPException(status_code=400, detail="Failed to fetch dashboard stats")
 
-
 @app.get("/api/access/logs")
 async def get_access_logs():
     try:
