@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    container_name: gymsphere_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: gymsphere_frontend
+    ports:
+      - "3000:80"
+    restart: always
