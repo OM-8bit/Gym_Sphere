@@ -41,10 +41,16 @@ htmlcov/
 
 # Python virtual environments
 venv/
+venv-ak27/
 env/
 ENV/
 
 # Python cache
 *.pyc
 *.pyo
+
+# Context files for development understanding (private)
+PROJECT_CONTEXT.md
+backend/BACKEND_CONTEXT.md
+frontend/FRONTEND_CONTEXT.md
 *.pyd
