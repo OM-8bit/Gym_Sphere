@@ -1,26 +1,24 @@
-﻿import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api.js'
-import { useAuth } from '../context/AuthContext.jsx'
 import loginSideImage from '../assets/login-page-side-image.jpg'
 import logoImage from '../assets/logo_image.png'
 
-export default function Login() {
-  const { login } = useAuth()
-  const [form, setForm] = useState({ email: '', password: '' })
+export default function Signup() {
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ email: '', password: '', full_name: '', gym_name: '' })
   const [loading, setLoading] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      const { data } = await api.post('/api/auth/login', form)
-      login(data)
-      toast.success('Welcome!')
-      window.location.href = '/'
+      await api.post('/api/auth/register', form)
+      toast.success('Registration successful! Please sign in.')
+      navigate('/login')
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Login failed')
+      toast.error(e.response?.data?.detail || 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -55,14 +53,14 @@ export default function Login() {
   )
 
   return (
-    <div className="login-container" style={{
+    <div className="signup-container" style={{
       display: 'flex',
       minHeight: '100vh',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
       overflow: 'hidden'
     }}>
-      {/* Left Side - Your Custom Gym Equipment Image */}
-      <div className="login-left" style={{
+      {/* Left Side - Gym Equipment Image */}
+      <div className="signup-left" style={{
         flex: '1',
         backgroundImage: `url(${loginSideImage})`,
         backgroundSize: 'cover',
@@ -71,7 +69,7 @@ export default function Login() {
         position: 'relative',
         minHeight: '100vh'
       }}>
-        {/* Subtle overlay to ensure text readability on right side */}
+        {/* Subtle overlay */}
         <div style={{
           position: 'absolute',
           inset: '0',
@@ -79,8 +77,8 @@ export default function Login() {
         }}></div>
       </div>
 
-      {/* Right Side - Login Form */}
-      <div className="login-right" style={{
+      {/* Right Side - Signup Form */}
+      <div className="signup-right" style={{
         flex: '1',
         backgroundColor: '#2a2a2a',
         display: 'flex',
@@ -111,10 +109,58 @@ export default function Login() {
             textTransform: 'uppercase',
             textAlign: 'center'
           }}>
-            WELCOME BACK
+            CREATE ACCOUNT
           </h2>
 
           <form onSubmit={submit}>
+            {/* Full Name Input */}
+            <div style={{ marginBottom: 'clamp(15px, 3vw, 20px)' }}>
+              <input
+                type="text"
+                value={form.full_name}
+                onChange={set('full_name')}
+                required
+                placeholder="Full Name"
+                style={{
+                  width: '100%',
+                  padding: 'clamp(10px, 2vw, 12px) 0',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid #555',
+                  color: '#ffffff',
+                  fontSize: 'clamp(14px, 2.5vw, 16px)',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderBottomColor = '#ff6b35'}
+                onBlur={(e) => e.target.style.borderBottomColor = '#555'}
+              />
+            </div>
+
+            {/* Gym Name Input */}
+            <div style={{ marginBottom: 'clamp(15px, 3vw, 20px)' }}>
+              <input
+                type="text"
+                value={form.gym_name}
+                onChange={set('gym_name')}
+                placeholder="Gym Name (Optional)"
+                style={{
+                  width: '100%',
+                  padding: 'clamp(10px, 2vw, 12px) 0',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid #555',
+                  color: '#ffffff',
+                  fontSize: 'clamp(14px, 2.5vw, 16px)',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderBottomColor = '#ff6b35'}
+                onBlur={(e) => e.target.style.borderBottomColor = '#555'}
+              />
+            </div>
+
+            {/* Email Input */}
             <div style={{ marginBottom: 'clamp(15px, 3vw, 20px)', position: 'relative' }}>
               <span style={{
                 position: 'absolute',
@@ -128,7 +174,7 @@ export default function Login() {
                 value={form.email}
                 onChange={set('email')}
                 required
-                placeholder="uniacademy.contact@provoost.com"
+                placeholder="Enter your email"
                 style={{
                   width: '100%',
                   padding: `clamp(10px, 2vw, 12px) 0 clamp(10px, 2vw, 12px) clamp(25px, 4vw, 30px)`,
@@ -146,7 +192,7 @@ export default function Login() {
             </div>
 
             {/* Password Input */}
-            <div style={{ marginBottom: 'clamp(8px, 2vw, 10px)', position: 'relative' }}>
+            <div style={{ marginBottom: 'clamp(30px, 5vw, 40px)', position: 'relative' }}>
               <span style={{
                 position: 'absolute',
                 left: '0',
@@ -176,18 +222,7 @@ export default function Login() {
               />
             </div>
 
-            {/* Forgot Password */}
-            <div style={{ textAlign: 'right', marginBottom: 'clamp(20px, 4vw, 40px)' }}>
-              <a href="#" style={{
-                color: '#ff6b35',
-                textDecoration: 'none',
-                fontSize: 'clamp(12px, 2.2vw, 14px)'
-              }}>
-                Forgot your Password?
-              </a>
-            </div>
-
-            {/* Login Button */}
+            {/* Signup Button */}
             <button
               type="submit"
               disabled={loading}
@@ -221,20 +256,20 @@ export default function Login() {
                 }
               }}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
 
-            {/* Signup Link */}
+            {/* Login Link */}
             <div style={{ textAlign: 'center' }}>
               <span style={{ 
                 color: '#888', 
                 fontSize: 'clamp(12px, 2.2vw, 14px)',
                 lineHeight: '1.4'
               }}>
-                Don't have an account? 
+                Already have an account? 
               </span>
               <Link
-                to="/signup"
+                to="/login"
                 style={{
                   color: '#ff6b35',
                   fontSize: 'clamp(12px, 2.2vw, 14px)',
@@ -243,7 +278,7 @@ export default function Login() {
                   lineHeight: '1.4'
                 }}
               >
-                Create Account
+                Sign In
               </Link>
             </div>
           </form>
@@ -253,15 +288,15 @@ export default function Login() {
       {/* Responsive Styles */}
       <style>{`
         @media (max-width: 768px) {
-          .login-container {
+          .signup-container {
             flex-direction: column !important;
             height: 100vh !important;
             min-height: 100vh !important;
           }
-          .login-left {
+          .signup-left {
             display: none !important;
           }
-          .login-right {
+          .signup-right {
             min-width: unset !important;
             padding: clamp(15px, 4vw, 25px) !important;
             flex: 1 !important;
@@ -272,23 +307,23 @@ export default function Login() {
         }
         
         @media (max-width: 480px) {
-          .login-container {
+          .signup-container {
             height: 100vh !important;
           }
-          .login-left {
+          .signup-left {
             display: none !important;
           }
-          .login-right {
+          .signup-right {
             padding: 15px !important;
             justify-content: center !important;
           }
         }
         
         @media (min-width: 1200px) {
-          .login-left {
+          .signup-left {
             flex: 1.2 !important;
           }
-          .login-right {
+          .signup-right {
             flex: 0.8 !important;
           }
         }
