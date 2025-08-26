@@ -2,9 +2,16 @@
 
 /* Breakpoints
    - Mobile: < 768px
-   - Tablet: 768px - 1024px
-   - Desktop: > 1024px
+   - Tablet: 768px - 1023px
+   - Desktop: >= 1024px
 */
+
+/* Fix horizontal overflow issues */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 /* Responsive typography */
 html {
@@ -38,7 +45,8 @@ html {
 }
 
 /* Media queries for responsive design */
-@media (max-width: 1024px) {
+/* For screens between 768px and 1023px (tablets only) */
+@media (min-width: 768px) and (max-width: 1023px) {
   /* Tablet styles */
   .container {
     padding-left: 16px;
@@ -100,6 +108,10 @@ html {
   /* Mobile styles */
   body {
     overflow-x: hidden;
+  }
+  
+  .main-content {
+    max-width: 100%;
   }
   
   .container {
@@ -170,6 +182,8 @@ html {
   display: flex;
   min-height: 100vh;
   background: var(--bg-primary);
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -187,6 +201,13 @@ html {
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    max-width: calc(100% - var(--sidebar-width));
+  }
 }
 
 /* Static header and sidebar on scroll */
@@ -223,7 +244,7 @@ html {
   border: none;
   color: var(--text-primary);
   cursor: pointer;
-  display: none;
+  display: none; /* Hidden by default */
   padding: 8px;
   margin: 8px auto;
   border-radius: 50%;
@@ -335,7 +356,7 @@ html {
 }
 
 /* Tablet sidebar adjustments */
-@media (min-width: 768px) and (max-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1023px) {
   .sidebar-toggle {
     display: flex;
     align-items: center;
@@ -370,6 +391,43 @@ html {
   
   .responsive-card-list {
     display: flex !important;
+  }
+}
+
+/* Laptop and larger screens (>=1024px) specific styles */
+@media (min-width: 1024px) {
+  /* Show table view for customers on laptop screens */
+  .responsive-table {
+    display: table !important;
+  }
+  
+  .responsive-card-list {
+    display: none !important;
+  }
+  
+  /* Fix horizontal scrolling */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Make header and sidebar static */
+  .sidebar, .header {
+    position: sticky;
+    top: 0;
+  }
+  
+  /* Ensure proper layout */
+  .app-container {
+    display: flex;
+    min-height: 100vh;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .content-area {
+    flex: 1;
+    overflow: auto;
+    padding: 32px;
   }
 }
 

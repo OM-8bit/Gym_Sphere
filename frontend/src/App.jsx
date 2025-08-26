@@ -4,6 +4,7 @@ import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AuthProvider from './context/AuthContext.jsx'
 import './styles/responsive.css'
+import './styles/laptop.css'
 
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'

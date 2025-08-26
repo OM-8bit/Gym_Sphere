@@ -29,7 +29,7 @@ export default function Layout({ children }) {
     const checkScreenSize = () => {
       const width = window.innerWidth;
       setIsMobile(width < 768);
-      setIsTablet(width >= 768 && width <= 1024);
+      setIsTablet(width >= 768 && width < 1024); // Changed from <= 1024 to < 1024
     }
     
     // Initial check
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
             />
           </div>
           
-          {/* Tablet sidebar toggle button */}
+          {/* Tablet sidebar toggle button - Only visible on tablet */}
           {isTablet && (
             <button 
               className="sidebar-toggle" 
