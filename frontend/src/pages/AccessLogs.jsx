@@ -16,7 +16,7 @@ export default function AccessLogs() {
   return (
     <div className="card">
       <h2 style={{marginBottom:12}}>Access Logs</h2>
-      <table className="table">
+      <table className="table responsive-table">
         <thead><tr><th>Time</th><th>Member</th><th>Status</th><th>Method</th></tr></thead>
         <tbody>
           {rows.map((r, i) => (
@@ -29,6 +29,26 @@ export default function AccessLogs() {
           ))}
         </tbody>
       </table>
+
+      {/* Mobile card view alternative */}
+      <div className="responsive-card-list" style={{ display: 'none' }}>
+        {rows.map((r, i) => (
+          <div key={i} className="table-card">
+            <div className="table-card-row">
+              <strong>Time:</strong> {new Date(r.timestamp).toLocaleString()}
+            </div>
+            <div className="table-card-row">
+              <strong>Member:</strong> {r.member_name || r.member_id}
+            </div>
+            <div className="table-card-row">
+              <strong>Status:</strong> {r.status}
+            </div>
+            <div className="table-card-row">
+              <strong>Method:</strong> {r.method}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

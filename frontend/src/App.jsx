@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AuthProvider from './context/AuthContext.jsx'
+import './styles/responsive.css'
 
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'

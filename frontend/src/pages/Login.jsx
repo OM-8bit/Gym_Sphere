@@ -61,15 +61,16 @@ export default function Login() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
       overflow: 'hidden'
     }}>
-      {/* Left Side - Your Custom Gym Equipment Image */}
-      <div className="login-left" style={{
+      {/* Left Side - Your Custom Gym Equipment Image (hidden on mobile) */}
+      <div className="login-left responsive-hidden" style={{
         flex: '1',
         backgroundImage: `url(${loginSideImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         position: 'relative',
-        minHeight: '100vh'
+        minHeight: '100vh',
+        display: 'block' // This will be overridden by responsive-hidden on mobile
       }}>
         {/* Subtle overlay to ensure text readability on right side */}
         <div style={{

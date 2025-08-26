@@ -1,0 +1,460 @@
+/* GymSphere - Responsive Styles */
+
+/* Breakpoints
+   - Mobile: < 768px
+   - Tablet: 768px - 1024px
+   - Desktop: > 1024px
+*/
+
+/* Responsive typography */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+  
+  h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+  }
+}
+
+:root {
+  --header-height: 60px;
+  --sidebar-width: 280px;
+  --sidebar-mobile-width: 250px;
+  --sidebar-tablet-width: 70px;
+  --sidebar-tablet-expanded-width: 250px;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 1024px) {
+  /* Tablet styles */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .responsive-card {
+    padding: 16px !important;
+  }
+  
+  /* Collapsible sidebar for tablet */
+  .sidebar {
+    width: var(--sidebar-tablet-width);
+    transition: width 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .sidebar.expanded {
+    width: var(--sidebar-tablet-expanded-width);
+  }
+  
+  .sidebar-logo {
+    justify-content: center;
+  }
+  
+  .sidebar-nav-text {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .sidebar.expanded .sidebar-nav-text {
+    opacity: 1;
+  }
+  
+  /* Show cards instead of table in tablet view */
+  .responsive-table {
+    display: none !important;
+  }
+  
+  .responsive-card-list {
+    display: flex !important;
+  }
+  
+  /* Tablet header with logo */
+  .header {
+    padding: 12px 16px;
+  }
+  
+  .tablet-logo {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Mobile styles */
+  body {
+    overflow-x: hidden;
+  }
+  
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  /* Make mobile home page grid 2x2 */
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .responsive-table {
+    display: none !important;
+  }
+  
+  .responsive-card-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .header-search {
+    display: none !important;
+  }
+  
+  .responsive-padding {
+    padding: 16px !important;
+  }
+  
+  .responsive-hidden {
+    display: none !important;
+  }
+  
+  /* Prevent horizontal scrolling */
+  .prevent-overflow {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+    /* Keep sidebar logo on mobile */
+  .sidebar-logo {
+    display: flex !important;
+  }
+  
+  /* Fix QR Generator and Settings page overflow */
+  .qr-container, .settings-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure form elements don't cause overflow */
+  input, select, textarea {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* Layout specific styles */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, width 0.3s ease;
+  z-index: 100;
+}
+
+.main-content {
+  flex: 1;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Static header and sidebar on scroll */
+.sidebar-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 767px) {
+  .sidebar-top {
+    position: relative;
+    margin-top: 0;
+    padding-top: 0;
+  }
+  
+  /* Adjust header for mobile */
+  .header {
+    position: relative;
+    top: 0;
+    margin-top: 0;
+  }
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: none;
+  padding: 8px;
+  margin: 8px auto;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+}
+
+.tablet-logo {
+  display: none;
+  align-items: center;
+}
+
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.content-area {
+  flex: 1;
+  padding: 32px;
+  overflow: auto;
+  background: var(--bg-primary);
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+
+/* Mobile sidebar styles */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-mobile-width);
+    transform: translateX(-100%);
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+  }
+  
+  .content-area {
+    padding: 16px;
+  }
+  
+  /* Remove black space above header in mobile */
+  .app-container {
+    display: block;
+  }
+  
+  .main-content {
+    min-height: 100vh;
+  }
+  
+  /* Action buttons on mobile */
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Touch targets */
+  button, 
+  a.btn, 
+  input[type="submit"], 
+  input[type="button"], 
+  .nav-link,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Tablet sidebar adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .sidebar-nav-text {
+    display: none;
+  }
+  
+  .sidebar.expanded .sidebar-nav-text {
+    display: inline;
+  }
+  
+  .content-area {
+    padding: 24px;
+  }
+  
+  /* Center sidebar icons when collapsed */
+  .sidebar-nav-link {
+    justify-content: center;
+  }
+  
+  .sidebar.expanded .sidebar-nav-link {
+    justify-content: flex-start;
+  }
+  
+  /* Display card view for customers in tablet too */
+  .responsive-table {
+    display: none !important;
+  }
+  
+  .responsive-card-list {
+    display: flex !important;
+  }
+}
+
+/* Responsive form elements */
+.responsive-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Mobile-specific form styles */
+@media (max-width: 767px) {
+  .form-row {
+    flex-direction: column !important;
+  }
+  
+  .form-group {
+    width: 100% !important;
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+  
+  /* Improved touch target sizes */
+  .input,
+  .btn,
+  button,
+  select {
+    min-height: 44px;
+  }
+  
+  /* Button and label tweaks for mobile */
+  label {
+    font-size: 14px !important;
+  }
+  
+  /* Stack buttons on mobile */
+  .btn-group {
+    flex-direction: column !important;
+  }
+  
+  /* Stretch buttons to full width on mobile */
+  .btn-mobile-full {
+    width: 100% !important;
+    margin-bottom: 10px;
+  }
+}
+
+/* Responsive table alternatives for mobile */
+@media (max-width: 767px) {
+  .table-responsive-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* For horizontal scrolling tables */
+  .table-responsive {
+    min-width: 640px;
+  }
+  
+  /* For card-style tables */
+  .table-card {
+    display: block;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+  
+  .table-card-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-primary);
+  }
+  
+  .table-card-row:last-child {
+    border-bottom: none;
+  }
+}

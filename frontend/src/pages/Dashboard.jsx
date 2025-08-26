@@ -99,7 +99,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid" style={{
+      <div className="grid dashboard-stats-grid" style={{
         gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',
         marginBottom: '32px'
       }}>

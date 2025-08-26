@@ -61,7 +61,7 @@ export default function AddMember() {
       {/* Form Card */}
       <div className="card">
         <form onSubmit={submit}>
-          <div className="grid" style={{
+          <div className="grid responsive-grid" style={{
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
             gap: '24px',
             marginBottom: '32px'

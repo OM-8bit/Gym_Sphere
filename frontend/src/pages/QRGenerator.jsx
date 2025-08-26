@@ -14,7 +14,7 @@ const QRGenerator = () => {
   }
 
   return (
-    <div style={{ maxWidth: '1000px' }}>
+    <div className="qr-container" style={{ maxWidth: '1000px' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ 
@@ -30,7 +30,7 @@ const QRGenerator = () => {
         </p>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+      <div className="grid responsive-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
         {/* Input Section */}
         <div className="card">
           <h3 style={{ color: '#ffffff', marginBottom: '24px', fontSize: '20px' }}>

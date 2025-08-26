@@ -40,7 +40,9 @@ export default function Members() {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        marginBottom: '32px' 
+        marginBottom: '32px',
+        flexWrap: 'wrap',
+        gap: '16px'
       }}>
         <div>
           <h1 style={{ 
@@ -65,7 +67,8 @@ export default function Members() {
         display: 'flex', 
         gap: '16px', 
         marginBottom: '24px',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexWrap: 'wrap'
       }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
           <Search size={16} style={{ 
@@ -119,20 +122,22 @@ export default function Members() {
             {searchTerm ? 'No members found matching your search.' : 'No members yet.'}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Membership</th>
-                  <th>Status</th>
-                  <th>Expires</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRows.map(m => (
+          <div>
+            {/* Desktop/Tablet View */}
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table responsive-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Membership</th>
+                    <th>Status</th>
+                    <th>Expires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.map(m => (
                   <tr key={m.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -196,6 +201,103 @@ export default function Members() {
                 ))}
               </tbody>
             </table>
+            </div>
+            
+            {/* Mobile Card View */}
+            <div className="responsive-card-list" style={{ display: 'none' }}>
+              {filteredRows.map(m => (
+                <div key={m.id} className="card responsive-card" style={{ 
+                  marginBottom: '16px',
+                  padding: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #ff6b35, #e55a2b)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontSize: '16px',
+                      fontWeight: '600'
+                    }}>
+                      {m.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ color: '#ffffff', fontWeight: '500' }}>
+                        {m.full_name}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '8px' }}>
+                    <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Email:</span>
+                    <div style={{ color: '#ffffff' }}>{m.email}</div>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px' 
+                  }}>
+                    <div>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Membership:</span>
+                      <div>
+                        <span style={{
+                          background: '#ff6b3520',
+                          color: '#ff6b35',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          textTransform: 'capitalize'
+                        }}>
+                          {m.membership_type}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Status:</span>
+                      <div>
+                        {m.is_active ? 
+                          <span className="badge badge-ok">Active</span> : 
+                          <span className="badge badge-bad">Inactive</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Expires:</span>
+                    <div style={{ color: '#ffffff' }}>{m.subscription_end ? new Date(m.subscription_end).toLocaleDateString() : '-'}</div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button 
+                      onClick={() => remove(m.id)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -212,7 +314,9 @@ export default function Members() {
           <div style={{ 
             display: 'flex', 
             gap: '32px',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
           }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ 

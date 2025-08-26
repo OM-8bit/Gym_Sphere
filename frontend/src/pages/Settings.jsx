@@ -15,7 +15,7 @@ export default function Settings() {
   ]
 
   return (
-    <div style={{ maxWidth: '1200px' }}>
+    <div className="settings-container" style={{ maxWidth: '1200px' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ 
@@ -31,7 +31,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '32px' }}>
+      <div className="responsive-grid" style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
         {/* Settings Navigation */}
         <div style={{ minWidth: '240px' }}>
           <div className="card" style={{ padding: '16px' }}>
