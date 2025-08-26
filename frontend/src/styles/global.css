@@ -77,9 +77,17 @@ body {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
   text-decoration: none;
   white-space: nowrap;
+}
+
+/* Make sure all elements inside buttons remain visible on hover */
+.btn * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-block !important;
+  color: inherit;
 }
 
 .btn:hover {
@@ -96,6 +104,13 @@ body {
   background: var(--primary-orange-hover);
 }
 
+/* Ensure elements inside primary buttons keep their color on hover */
+.btn-primary:hover svg,
+.btn-primary:hover span,
+.btn-primary:hover * {
+  color: white !important;
+}
+
 .btn-secondary {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
@@ -105,6 +120,13 @@ body {
 .btn-secondary:hover {
   background: var(--bg-card);
   border-color: var(--border-secondary);
+}
+
+/* Ensure elements inside secondary buttons keep their color on hover */
+.btn-secondary:hover svg,
+.btn-secondary:hover span,
+.btn-secondary:hover * {
+  color: var(--text-secondary) !important;
 }
 
 .btn-danger {

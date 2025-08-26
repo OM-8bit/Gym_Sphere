@@ -56,19 +56,21 @@ const QRGenerator = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="qr-button-container" style={{ display: 'flex', gap: '12px' }}>
             <button 
-              className="btn btn-primary"
+              className="btn btn-primary btn-mobile-full"
               onClick={generateQR}
               style={{ flex: 1 }}
             >
-              <QrCode size={16} /> Generate QR Code
+              <QrCode size={16} style={{marginRight: '4px', flexShrink: 0}} /> 
+              <span style={{display: 'inline-block'}}>Generate QR Code</span>
             </button>
             <button 
-              className="btn btn-secondary"
+              className="btn btn-secondary btn-mobile-full"
               onClick={() => setQrData('')}
             >
-              <RefreshCw size={16} /> Clear
+              <RefreshCw size={16} style={{marginRight: '4px', flexShrink: 0}} /> 
+              <span style={{display: 'inline-block'}}>Clear</span>
             </button>
           </div>
         </div>
@@ -122,15 +124,17 @@ const QRGenerator = () => {
           </div>
 
           {generated && (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn btn-primary" style={{ flex: 1 }}>
-                <Download size={16} /> Download PNG
+            <div className="qr-button-container" style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn btn-primary btn-mobile-full" style={{ flex: 1 }}>
+                <Download size={16} style={{marginRight: '4px', flexShrink: 0}} /> 
+                <span style={{display: 'inline-block'}}>Download PNG</span>
               </button>
               <button 
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-mobile-full"
                 onClick={copyToClipboard}
               >
-                <Copy size={16} /> Copy Data
+                <Copy size={16} style={{marginRight: '4px', flexShrink: 0}} /> 
+                <span style={{display: 'inline-block'}}>Copy Data</span>
               </button>
             </div>
           )}

@@ -13,6 +13,34 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Fix for buttons to ensure text and icons don't disappear on hover */
+.btn svg,
+.btn svg + *,
+.btn > span {
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none; /* This prevents hover state from being transferred to children */
+}
+
+/* Super important fix to ensure button content never disappears */
+.btn:hover svg,
+.btn:hover svg + *,
+.btn:hover > span,
+.btn:hover > *,
+.btn:active svg,
+.btn:active svg + *,
+.btn:active > span,
+.btn:active > *,
+.btn:focus svg,
+.btn:focus svg + *,
+.btn:focus > span,
+.btn:focus > * {
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 /* Responsive typography */
 html {
   font-size: 16px;
@@ -481,6 +509,35 @@ html {
   .btn-mobile-full {
     width: 100% !important;
     margin-bottom: 10px;
+  }
+  
+  /* Fix for QR Generator buttons */
+  .qr-container .btn {
+    padding: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    justify-content: center;
+    min-height: 44px;
+    width: 100%;
+    flex: 1;
+  }
+  
+  /* Ensure buttons stack on small screens */
+  .qr-container .qr-button-container {
+    flex-direction: column !important;
+    width: 100%;
+    gap: 10px !important;
+  }
+  
+  /* Adjust QR container for small screens */
+  .qr-container {
+    padding: 10px !important;
+    max-width: 100% !important;
+  }
+  
+  /* Fix grid layout on mobile */
+  .qr-container .grid {
+    grid-template-columns: 1fr !important;
   }
 }
 

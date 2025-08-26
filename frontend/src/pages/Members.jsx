@@ -58,7 +58,8 @@ export default function Members() {
           </p>
         </div>
         <Link to="/add-member" className="btn btn-primary">
-          <Plus size={16}/> Add Member
+          <Plus size={16} style={{marginRight: '4px', flexShrink: 0}} /> 
+          <span style={{display: 'inline-block'}}>Add Member</span>
         </Link>
       </div>
 
