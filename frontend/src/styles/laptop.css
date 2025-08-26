@@ -1,0 +1,76 @@
+/* Laptop-specific styles (screens >= 1024px) */
+
+@media (min-width: 1024px) {
+  /* Fixed header and sidebar */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: var(--header-height);
+  }
+  
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 90;
+    width: var(--sidebar-width) !important; /* Force full width on laptop */
+  }
+  
+  /* Hide sidebar toggle button on laptop */
+  .sidebar-toggle {
+    display: none !important;
+  }
+  
+  /* Always show sidebar nav text on laptop */
+  .sidebar-nav-text {
+    opacity: 1 !important;
+    display: inline !important;
+  }
+  
+  /* Ensure main content scrolls properly */
+  .main-content {
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    max-width: 100%;
+  }
+  
+  /* Fix for Members table horizontal scroll */
+  .card {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  table.responsive-table {
+    width: 100%;
+    display: table !important;
+  }
+  
+  /* Make sure the member cards are hidden on laptop */
+  .responsive-card-list {
+    display: none !important;
+  }
+  
+  /* Fix sidebar nav links alignment */
+  .sidebar-nav-link {
+    justify-content: flex-start !important;
+  }
+  
+  /* Ensure no horizontal overflow */
+  .prevent-overflow,
+  .app-container,
+  .main-content,
+  .content-area {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}

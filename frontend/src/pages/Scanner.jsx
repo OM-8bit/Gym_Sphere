@@ -20,8 +20,8 @@ export default function Scanner() {
   return (
     <div className="card">
       <h2 style={{marginBottom:12}}>Access Scanner</h2>
-      <div style={{display:'flex', gap:10}}>
-        <input className="input" placeholder="Paste QR token" value={token} onChange={e=>setToken(e.target.value)} />
+      <div style={{display:'flex', gap:10, flexWrap: 'wrap'}}>
+        <input className="input" placeholder="Paste QR token" value={token} onChange={e=>setToken(e.target.value)} style={{flex: '1', minWidth: '200px'}} />
         <button className="btn btn-primary" onClick={verify}>Verify</button>
       </div>
       <div style={{marginTop:16}}>

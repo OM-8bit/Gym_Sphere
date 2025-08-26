@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AuthProvider from './context/AuthContext.jsx'
+import './styles/responsive.css'
+import './styles/laptop.css'
 
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
@@ -17,7 +19,12 @@ import Settings from './pages/Settings.jsx'
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_relativeSplatPath: true,
+          v7_startTransition: true
+        }}
+      >
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
