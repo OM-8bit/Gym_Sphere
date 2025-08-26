@@ -203,96 +203,133 @@ export default function Members() {
             </table>
             </div>
             
-            {/* Mobile Card View */}
+            {/* Mobile Card View - Compact Rectangular Format */}
             <div className="responsive-card-list" style={{ display: 'none' }}>
               {filteredRows.map(m => (
-                <div key={m.id} className="card responsive-card" style={{ 
-                  marginBottom: '16px',
-                  padding: '16px'
+                <div key={m.id} style={{
+                  background: '#2d2d2d',
+                  border: '1px solid #404040',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  minHeight: '60px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  {/* Left section - Avatar and Name */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px',
+                    flex: '1',
+                    minWidth: '0' // Allow text truncation
+                  }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '36px',
+                      height: '36px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #ff6b35, #e55a2b)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#ffffff',
-                      fontSize: '16px',
-                      fontWeight: '600'
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      flexShrink: '0'
                     }}>
                       {m.full_name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <div style={{ color: '#ffffff', fontWeight: '500' }}>
+                    
+                    <div style={{ 
+                      flex: '1',
+                      minWidth: '0',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{ 
+                        color: '#ffffff', 
+                        fontWeight: '500',
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        marginBottom: '2px'
+                      }}>
                         {m.full_name}
                       </div>
+                      <div style={{ 
+                        color: '#a0a0a0', 
+                        fontSize: '12px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {m.email}
+                      </div>
                     </div>
                   </div>
-                  
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Email:</span>
-                    <div style={{ color: '#ffffff' }}>{m.email}</div>
-                  </div>
-                  
+
+                  {/* Right section - Status and Actions */}
                   <div style={{ 
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px' 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    flexShrink: '0'
                   }}>
-                    <div>
-                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Membership:</span>
-                      <div>
-                        <span style={{
-                          background: '#ff6b3520',
-                          color: '#ff6b35',
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          textTransform: 'capitalize'
-                        }}>
-                          {m.membership_type}
-                        </span>
-                      </div>
-                    </div>
+                    {/* Membership badge */}
+                    <span style={{
+                      background: '#ff6b3520',
+                      color: '#ff6b35',
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      fontSize: '10px',
+                      fontWeight: '500',
+                      textTransform: 'capitalize',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {m.membership_type}
+                    </span>
                     
-                    <div>
-                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Status:</span>
-                      <div>
-                        {m.is_active ? 
-                          <span className="badge badge-ok">Active</span> : 
-                          <span className="badge badge-bad">Inactive</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginBottom: '16px' }}>
-                    <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Expires:</span>
-                    <div style={{ color: '#ffffff' }}>{m.subscription_end ? new Date(m.subscription_end).toLocaleDateString() : '-'}</div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    {/* Status badge */}
+                    {m.is_active ? 
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#4ade80',
+                        flexShrink: '0'
+                      }} title="Active"></div> : 
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#ef4444',
+                        flexShrink: '0'
+                      }} title="Inactive"></div>
+                    }
+                    
+                    {/* Delete button */}
                     <button 
                       onClick={() => remove(m.id)}
                       style={{
                         background: 'rgba(239, 68, 68, 0.1)',
                         color: '#ef4444',
                         border: 'none',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
+                        padding: '6px',
+                        borderRadius: '6px',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px'
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        flexShrink: '0'
                       }}
+                      title="Delete member"
                     >
-                      <Trash2 size={16} /> Delete
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
