@@ -149,24 +149,31 @@ html {
     overflow-x: hidden;
   }
   
-  /* Completely collapsible sidebar (same as mobile) - hidden by default */
+  /* Tablet sidebar behaves exactly like mobile - overlay style */
   .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    z-index: 1100;
-    width: var(--sidebar-mobile-width);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-primary);
+    width: var(--sidebar-mobile-width) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1100 !important;
+    background: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
   }
   
-  /* Show sidebar when active (same as mobile) */
+  /* Show sidebar when active (overlay style) */
   .sidebar.active {
-    transform: translateX(0);
+    transform: translateX(0) !important;
+  }
+  
+  /* Show sidebar when tablet-open class is added */
+  .sidebar.tablet-open {
+    transform: translateX(0) !important;
   }
   
   /* Sidebar overlay for tablet (same as mobile) */
@@ -186,9 +193,22 @@ html {
     display: block;
   }
   
-  /* Main content takes full width (same as mobile) */
+  /* Main content always takes full width (like mobile) */
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 100vh !important;
+    background: var(--bg-primary) !important;
+  }
+  
+  /* Ensure app container doesn't have issues */
+  .app-container {
+    display: flex !important;
+    min-height: 100vh !important;
+    background: var(--bg-primary) !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
   }
   
   /* Keep sidebar logo on tablet (visible when sidebar is open) */
@@ -231,6 +251,27 @@ html {
   /* Tablet header adjustments */
   .header {
     padding: 12px 16px;
+  }
+  
+  /* Show menu toggle button on tablet */
+  .menu-toggle {
+    display: flex !important;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .menu-toggle:hover {
+    background: var(--primary-orange);
+    color: white;
+    border-color: var(--primary-orange);
   }
 }
 

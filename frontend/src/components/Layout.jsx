@@ -23,7 +23,7 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false) // Back to false since we're using overlay approach
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -43,6 +43,7 @@ export default function Layout({ children }) {
   }, [])
 
   const toggleSidebar = () => {
+    // Both tablet and mobile use the same overlay behavior
     setSidebarOpen(!sidebarOpen)
   }
   
@@ -69,13 +70,15 @@ export default function Layout({ children }) {
   return (
     <div className="app-container">
       {/* Overlay for mobile and tablet */}
-      <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
-        onClick={closeSidebar}
-      ></div>
+      {(isMobile || isTablet) && (
+        <div 
+          className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
+          onClick={closeSidebar}
+        ></div>
+      )}
       
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'active' : ''} ${sidebarExpanded ? 'expanded' : ''}`}>
+      <aside className={`sidebar ${isMobile && sidebarOpen ? 'mobile-open' : ''} ${isTablet && sidebarOpen ? 'tablet-open' : ''}`}>
         {/* Logo/Brand Section */}
         <div className="sidebar-top">
           <div className="sidebar-logo" style={{ 
