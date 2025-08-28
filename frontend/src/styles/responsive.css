@@ -75,60 +75,162 @@ html {
 /* Media queries for responsive design */
 /* For screens between 768px and 1023px (tablets only) */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* Tablet styles */
+  /* Apply all mobile styles to tablet */
+  body {
+    overflow-x: hidden;
+  }
+  
+  .main-content {
+    max-width: 100%;
+  }
+  
   .container {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  /* Make tablet home page grid 2x2 (same as mobile) */
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  /* Reduce size of "Coming Soon" text in stats cards on tablet */
+  .dashboard-stats-grid .metric-value {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Make the icon larger in proportion to the smaller text */
+  .dashboard-stats-grid .metric-card > div > div:last-child {
+    padding: 12px !important;
+  }
+  
+  .dashboard-stats-grid .metric-card > div > div:last-child svg {
+    width: 24px !important;
+    height: 24px !important;
   }
   
   .responsive-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   
   .responsive-card {
     padding: 16px !important;
   }
   
-  /* Collapsible sidebar for tablet */
-  .sidebar {
-    width: var(--sidebar-tablet-width);
-    transition: width 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .sidebar.expanded {
-    width: var(--sidebar-tablet-expanded-width);
-  }
-  
-  .sidebar-logo {
-    justify-content: center;
-  }
-  
-  .sidebar-nav-text {
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  
-  .sidebar.expanded .sidebar-nav-text {
-    opacity: 1;
-  }
-  
-  /* Show cards instead of table in tablet view */
+  /* Hide tables and show cards (same as mobile) */
   .responsive-table {
     display: none !important;
   }
   
   .responsive-card-list {
     display: flex !important;
+    flex-direction: column;
+    gap: 16px;
   }
   
-  /* Tablet header with logo */
+  /* Hide search on tablet (same as mobile) */
+  .header-search {
+    display: none !important;
+  }
+  
+  .responsive-padding {
+    padding: 16px !important;
+  }
+  
+  .responsive-hidden {
+    display: none !important;
+  }
+  
+  /* Prevent horizontal scrolling */
+  .prevent-overflow {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Completely collapsible sidebar (same as mobile) - hidden by default */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1100;
+    width: var(--sidebar-mobile-width);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-primary);
+  }
+  
+  /* Show sidebar when active (same as mobile) */
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  /* Sidebar overlay for tablet (same as mobile) */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    backdrop-filter: blur(2px);
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+  }
+  
+  /* Main content takes full width (same as mobile) */
+  .main-content {
+    margin-left: 0;
+  }
+  
+  /* Keep sidebar logo on tablet (visible when sidebar is open) */
+  .sidebar-logo {
+    display: flex !important;
+  }
+  
+  /* Fix QR Generator and Settings page overflow */
+  .qr-container, .settings-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure form elements don't cause overflow */
+  input, select, textarea {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  /* Mobile card adjustments for tablet */
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+  
+  /* Card icons smaller on tablet */
+  .metric-card .icon-container {
+    padding: 12px;
+  }
+  
+  .metric-card .icon-container svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Tablet header adjustments */
   .header {
     padding: 12px 16px;
-  }
-  
-  .tablet-logo {
-    display: flex !important;
   }
 }
 

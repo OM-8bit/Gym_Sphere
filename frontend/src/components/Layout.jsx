@@ -51,7 +51,7 @@ export default function Layout({ children }) {
   }
   
   const closeSidebar = () => {
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setSidebarOpen(false)
     }
   }
@@ -68,7 +68,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="app-container">
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile and tablet */}
       <div 
         className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
         onClick={closeSidebar}
@@ -97,17 +97,6 @@ export default function Layout({ children }) {
               }}
             />
           </div>
-          
-          {/* Tablet sidebar toggle button - Only visible on tablet */}
-          {isTablet && (
-            <button 
-              className="sidebar-toggle" 
-              onClick={toggleSidebarExpand}
-              aria-label="Toggle sidebar"
-            >
-              {sidebarExpanded ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          )}
         </div>
 
         {/* Navigation */}
@@ -197,14 +186,16 @@ export default function Layout({ children }) {
             alignItems: 'center', 
             gap: '16px' 
           }}>
-            {/* Mobile menu toggle button */}
-            <button 
-              className="menu-toggle" 
-              onClick={toggleSidebar}
-              aria-label="Toggle menu"
-            >
-              <Menu size={24} />
-            </button>
+            {/* Mobile and tablet menu toggle button */}
+            {(isMobile || isTablet) && (
+              <button 
+                className="menu-toggle" 
+                onClick={toggleSidebar}
+                aria-label="Toggle menu"
+              >
+                <Menu size={24} />
+              </button>
+            )}
             
             {/* Search bar - hidden on mobile */}
             <div className="header-search" style={{
