@@ -153,6 +153,21 @@ html {
     gap: 16px !important;
   }
   
+  /* Reduce size of "Coming Soon" text in stats cards on mobile */
+  .dashboard-stats-grid .metric-value {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Make the icon larger in proportion to the smaller text */
+  .dashboard-stats-grid .metric-card > div > div:last-child {
+    padding: 12px !important;
+  }
+  
+  .dashboard-stats-grid .metric-card > div > div:last-child svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
   .responsive-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
