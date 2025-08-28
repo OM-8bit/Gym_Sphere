@@ -75,60 +75,220 @@ html {
 /* Media queries for responsive design */
 /* For screens between 768px and 1023px (tablets only) */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* Tablet styles */
+  /* Apply all mobile styles to tablet */
+  body {
+    overflow-x: hidden;
+  }
+  
+  .main-content {
+    max-width: 100%;
+  }
+  
   .container {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  /* Make tablet home page grid 2x2 (same as mobile) */
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  /* Reduce size of "Coming Soon" text in stats cards on tablet */
+  .dashboard-stats-grid .metric-value {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Make the icon larger in proportion to the smaller text */
+  .dashboard-stats-grid .metric-card > div > div:last-child {
+    padding: 12px !important;
+  }
+  
+  .dashboard-stats-grid .metric-card > div > div:last-child svg {
+    width: 24px !important;
+    height: 24px !important;
   }
   
   .responsive-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   
   .responsive-card {
     padding: 16px !important;
   }
   
-  /* Collapsible sidebar for tablet */
-  .sidebar {
-    width: var(--sidebar-tablet-width);
-    transition: width 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .sidebar.expanded {
-    width: var(--sidebar-tablet-expanded-width);
-  }
-  
-  .sidebar-logo {
-    justify-content: center;
-  }
-  
-  .sidebar-nav-text {
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  
-  .sidebar.expanded .sidebar-nav-text {
-    opacity: 1;
-  }
-  
-  /* Show cards instead of table in tablet view */
+  /* Hide tables and show cards (same as mobile) */
   .responsive-table {
     display: none !important;
   }
   
   .responsive-card-list {
     display: flex !important;
+    flex-direction: column;
+    gap: 16px;
   }
   
-  /* Tablet header with logo */
+  /* Hide search on tablet (same as mobile) */
+  .header-search {
+    display: none !important;
+  }
+  
+  .responsive-padding {
+    padding: 16px !important;
+  }
+  
+  .responsive-hidden {
+    display: none !important;
+  }
+  
+  /* Prevent horizontal scrolling */
+  .prevent-overflow {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Tablet sidebar behaves exactly like mobile - overlay style */
+  .sidebar {
+    width: var(--sidebar-mobile-width) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1100 !important;
+    background: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border-primary) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
+  }
+  
+  /* Show sidebar when active (overlay style) */
+  .sidebar.active {
+    transform: translateX(0) !important;
+  }
+  
+  /* Show sidebar when tablet-open class is added */
+  .sidebar.tablet-open {
+    transform: translateX(0) !important;
+  }
+  
+  /* Sidebar overlay for tablet (same as mobile) */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    backdrop-filter: blur(2px);
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+  }
+  
+  /* Main content always takes full width (like mobile) */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 100vh !important;
+    background: var(--bg-primary) !important;
+  }
+  
+  /* Ensure app container doesn't have issues */
+  .app-container {
+    display: flex !important;
+    min-height: 100vh !important;
+    background: var(--bg-primary) !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Keep sidebar logo on tablet (visible when sidebar is open) */
+  .sidebar-logo {
+    display: flex !important;
+  }
+  
+  /* Fix QR Generator and Settings page overflow */
+  .qr-container, .settings-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure form elements don't cause overflow */
+  input, select, textarea {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  /* Mobile card adjustments for tablet */
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+  
+  /* Card icons smaller on tablet */
+  .metric-card .icon-container {
+    padding: 12px;
+  }
+  
+  .metric-card .icon-container svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Tablet header adjustments */
   .header {
     padding: 12px 16px;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-primary) !important;
   }
   
-  .tablet-logo {
+  /* Adjust main content to account for fixed header */
+  .main-content {
+    padding-top: 70px !important; /* Height of header + some padding */
+  }
+  
+  /* Adjust content area padding */
+  .content-area {
+    padding-top: 0 !important;
+  }
+  
+  /* Show menu toggle button on tablet */
+  .menu-toggle {
     display: flex !important;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .menu-toggle:hover {
+    background: var(--primary-orange);
+    color: white;
+    border-color: var(--primary-orange);
   }
 }
 
@@ -151,6 +311,21 @@ html {
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 16px !important;
+  }
+  
+  /* Reduce size of "Coming Soon" text in stats cards on mobile */
+  .dashboard-stats-grid .metric-value {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Make the icon larger in proportion to the smaller text */
+  .dashboard-stats-grid .metric-card > div > div:last-child {
+    padding: 12px !important;
+  }
+  
+  .dashboard-stats-grid .metric-card > div > div:last-child svg {
+    width: 24px !important;
+    height: 24px !important;
   }
   
   .responsive-grid {
@@ -202,6 +377,29 @@ html {
   input, select, textarea {
     max-width: 100%;
     width: 100%;
+  }
+  
+  /* Fixed header for mobile - non-scrollable */
+  .header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-primary) !important;
+    padding: 12px 16px !important;
+  }
+  
+  /* Adjust main content to account for fixed header on mobile */
+  .main-content {
+    padding-top: 70px !important; /* Height of header + some padding */
+  }
+  
+  /* Adjust content area padding on mobile */
+  .content-area {
+    padding-top: 0 !important;
+    padding: 1rem !important;
   }
 }
 

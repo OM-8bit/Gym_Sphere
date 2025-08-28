@@ -23,7 +23,7 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false) // Back to false since we're using overlay approach
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -43,6 +43,7 @@ export default function Layout({ children }) {
   }, [])
 
   const toggleSidebar = () => {
+    // Both tablet and mobile use the same overlay behavior
     setSidebarOpen(!sidebarOpen)
   }
   
@@ -51,7 +52,7 @@ export default function Layout({ children }) {
   }
   
   const closeSidebar = () => {
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setSidebarOpen(false)
     }
   }
@@ -68,14 +69,16 @@ export default function Layout({ children }) {
 
   return (
     <div className="app-container">
-      {/* Overlay for mobile */}
-      <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
-        onClick={closeSidebar}
-      ></div>
+      {/* Overlay for mobile and tablet */}
+      {(isMobile || isTablet) && (
+        <div 
+          className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
+          onClick={closeSidebar}
+        ></div>
+      )}
       
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'active' : ''} ${sidebarExpanded ? 'expanded' : ''}`}>
+      <aside className={`sidebar ${isMobile && sidebarOpen ? 'mobile-open' : ''} ${isTablet && sidebarOpen ? 'tablet-open' : ''}`}>
         {/* Logo/Brand Section */}
         <div className="sidebar-top">
           <div className="sidebar-logo" style={{ 
@@ -97,17 +100,6 @@ export default function Layout({ children }) {
               }}
             />
           </div>
-          
-          {/* Tablet sidebar toggle button - Only visible on tablet */}
-          {isTablet && (
-            <button 
-              className="sidebar-toggle" 
-              onClick={toggleSidebarExpand}
-              aria-label="Toggle sidebar"
-            >
-              {sidebarExpanded ? <X size={16} /> : <Menu size={16} />}
-            </button>
-          )}
         </div>
 
         {/* Navigation */}
@@ -197,14 +189,16 @@ export default function Layout({ children }) {
             alignItems: 'center', 
             gap: '16px' 
           }}>
-            {/* Mobile menu toggle button */}
-            <button 
-              className="menu-toggle" 
-              onClick={toggleSidebar}
-              aria-label="Toggle menu"
-            >
-              <Menu size={24} />
-            </button>
+            {/* Mobile and tablet menu toggle button */}
+            {(isMobile || isTablet) && (
+              <button 
+                className="menu-toggle" 
+                onClick={toggleSidebar}
+                aria-label="Toggle menu"
+              >
+                <Menu size={24} />
+              </button>
+            )}
             
             {/* Search bar - hidden on mobile */}
             <div className="header-search" style={{
