@@ -808,6 +808,38 @@ async def verify_qr(request: QRVerifyRequest):
     except Exception as e:
         logger.error(f"QR verify error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+# When gym owner scans QR during registration
+@app.post("/api/admin/scan-new-card")
+async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_current_user)):
+    qr_data = request.qr_data  # "gymsphere:ABC001"
+    card_number = qr_data.split(":")[-1]  # Extract "ABC001"
+    
+    # Check if card already exists
+    existing_card = supabase_admin.table("card_inventory").select("*").eq("card_number", card_number).execute()
+    
+    if existing_card.data:
+        # Card already registered
+        if existing_card.data[0]["status"] == "assigned":
+            return {"success": False, "message": "Card already assigned"}
+        else:
+            return {"success": True, "message": "Card available", "card_number": card_number}
+    else:
+        # NEW CARD - Create entry on first scan
+        new_card = {
+            "card_number": card_number,
+            "status": "available", 
+            "gym_owner_email": current_user["email"],
+            "created_at": datetime.now().isoformat(),
+            "first_scanned_at": datetime.now().isoformat()
+        }
+        supabase_admin.table("card_inventory").insert(new_card).execute()
+        
+        return {
+            "success": True, 
+            "message": f"New card {card_number} activated and ready!", 
+            "card_number": card_number,
+            "is_new_card": True
+        }
 
 # Member Utility Endpoints
 @app.post("/api/members/{member_id}/reset-password")
