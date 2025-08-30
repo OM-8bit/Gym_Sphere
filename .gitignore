@@ -53,6 +53,7 @@ ENV/
 PROJECT_CONTEXT.md
 backend/BACKEND_CONTEXT.md
 frontend/FRONTEND_CONTEXT.md
+ADMIN_CONTEXT.md
 *.pyd
 
 # Assets folder (images, logos, etc.)
