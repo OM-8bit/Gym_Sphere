@@ -8,12 +8,26 @@ export default function Members() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const normalizeToArray = (payload) => {
+    // Accept either an array or an object with an array property (e.g., { members: [...], count })
+    if (Array.isArray(payload)) return payload
+    if (Array.isArray(payload?.members)) return payload.members
+    if (Array.isArray(payload?.data)) return payload.data
+    return []
+  }
+
   const load = async () => {
     try {
-      const { data } = await api.get('/api/members')
-      setRows(data)
-    } catch { toast.error('Failed to load members') }
-    finally { setLoading(false) }
+      setLoading(true)
+      const res = await api.get('/api/members', { withCredentials: true })
+      const list = normalizeToArray(res?.data)
+      setRows(list)
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to load members')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -21,10 +35,13 @@ export default function Members() {
   const remove = async (id) => {
     if (!confirm('Delete this member?')) return
     try {
-      await api.delete(`/api/members/${id}`)
-      setRows(rows.filter(r => r.id !== id))
+      await api.delete(`/api/members/${id}`, { withCredentials: true })
+      setRows(prev => prev.filter(r => r.id !== id))
       toast.success('Deleted')
-    } catch { toast.error('Delete failed') }
+    } catch (e) {
+      console.error(e)
+      toast.error('Delete failed')
+    }
   }
 
   return (
@@ -38,7 +55,11 @@ export default function Members() {
           <div>No members yet.</div>
         ) : (
           <table className="table">
-            <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Status</th><th>Expires</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Type</th><th>Status</th><th>Expires</th><th></th>
+              </tr>
+            </thead>
             <tbody>
               {rows.map(m => (
                 <tr key={m.id}>
@@ -47,7 +68,7 @@ export default function Members() {
                   <td>{m.membership_type}</td>
                   <td>{m.is_active ? <span className="badge badge-ok">Active</span> : <span className="badge badge-bad">Inactive</span>}</td>
                   <td>{m.subscription_end ? new Date(m.subscription_end).toLocaleDateString() : '-'}</td>
-                  <td><button className="btn btn-danger" onClick={()=>remove(m.id)}><Trash2 size={14}/> Delete</button></td>
+                  <td><button className="btn btn-danger" onClick={() => remove(m.id)}><Trash2 size={14}/> Delete</button></td>
                 </tr>
               ))}
             </tbody>
