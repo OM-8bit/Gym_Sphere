@@ -77,5 +77,5 @@ export default function Members() {
       </div>
     </div>
   )
-              }
+}
 
