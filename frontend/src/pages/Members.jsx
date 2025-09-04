@@ -12,8 +12,13 @@ export default function Members() {
   const load = async () => {
     try {
       const { data } = await api.get('/api/members')
-      setRows(data)
-    } catch { toast.error('Failed to load members') }
+      // Backend returns {members: [...], count: number}, so extract the members array
+      const membersArray = data.members || []
+      setRows(Array.isArray(membersArray) ? membersArray : [])
+    } catch { 
+      toast.error('Failed to load members')
+      setRows([]) // Set to empty array on error
+    }
     finally { setLoading(false) }
   }
 
@@ -23,15 +28,17 @@ export default function Members() {
     if (!confirm('Delete this member?')) return
     try {
       await api.delete(`/api/members/${id}`)
-      setRows(rows.filter(r => r.id !== id))
+      // Ensure rows is an array before filtering
+      setRows(Array.isArray(rows) ? rows.filter(r => r.id !== id) : [])
       toast.success('Deleted')
     } catch { toast.error('Delete failed') }
   }
 
-  const filteredRows = rows.filter(member =>
-    member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Ensure rows is an array before filtering
+  const filteredRows = Array.isArray(rows) ? rows.filter(member =>
+    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : []
 
   return (
     <div style={{ maxWidth: '1400px' }}>
