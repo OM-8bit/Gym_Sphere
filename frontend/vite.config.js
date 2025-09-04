@@ -1,26 +1,26 @@
 ﻿import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true, // ✅ Allow Docker external connections
     port: 3000,
-    watch: {
-      usePolling: true, // ✅ Better file watching in Docker
-    },
-    proxy: {
-      '/api': { 
-        target: process.env.DOCKER_ENV ? 'http://backend:8000' : 'http://localhost:8000',
-        changeOrigin: true 
-      }
+    open: true, // automatically open browser on server start
+    host: true, // expose to network
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true, // useful for debugging
+  },
+  // Resolve imports
+  resolve: {
+    alias: {
+      '@': '/src', // allows @/components/... imports
     }
   },
-  preview: {
-    host: true,
-    port: 4173,
-  },
-  css: { 
-    postcss: false 
+  // Environment variables
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   }
 })
