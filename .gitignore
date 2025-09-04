@@ -1,3 +1,4 @@
+
 # Environment variables
 .env
 .env.local
@@ -55,6 +56,37 @@ backend/BACKEND_CONTEXT.md
 frontend/FRONTEND_CONTEXT.md
 ADMIN_CONTEXT.md
 *.pyd
+<<<<<<< HEAD
 
 # Assets folder (images, logos, etc.)
 frontend/src/assets/
+=======
+=======
+# Project-wide .gitignore
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.code-workspace
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Temporary files
+.tmp/
+.temp/
+
+# Backup files
+*.bak
+*~
+*.swp
+
+>>>>>>> 9c66652a392470e1f29e70b5e8e2a97b1609adf1

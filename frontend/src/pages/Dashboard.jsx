@@ -1,140 +1,334 @@
-﻿import React, { useEffect, useState } from 'react'
-import api from '../services/api.js'
-import { Users, UserCheck, UserX, Calendar, Dumbbell, TrendingUp } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { getMembers, deleteMember, addMember, updateMember } from '../services/api';
+import Header from '../components/Header';
+import MemberCard from '../components/MemberCard';
+import MemberListItem from '../components/MemberListItem';
+import SearchFilter from '../components/SearchFilter';
+import MemberForm from '../components/MemberForm';
+import DashboardStats from '../components/DashboardStats';
+import { useToast } from '../components/ToastContainer';
+import ConfirmationModal from '../components/ConfirmationModal';
+import LoadingSkeleton from '../components/LoadingSkeleton';
+import { useTheme } from '../contexts/ThemeContext';
 
-export default function Dashboard() {
-  const [stats, setStats] = useState({ total_members:0, active_members:0, expired_members:0, this_month_joins:0 })
-  const [loading, setLoading] = useState(true)
+const Dashboard = () => {
+  const [members, setMembers] = useState([]);
+  const [filteredMembers, setFilteredMembers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('viewMode') || 'grid';
+  });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentMember, setCurrentMember] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get('/api/dashboard/stats')
-        setStats(data)
-      } catch {}
-      finally { setLoading(false) }
-    })()
-  }, [])
+    fetchMembers();
+    
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
 
-  const Card = ({title, value, icon:Icon, color, subtitle}) => (
-    <div className="metric-card">
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: '16px'}}>
-        <div>
-          <div className="metric-title">{title}</div>
-          <div className="metric-value" style={{color}}>{loading ? '—' : value}</div>
-          {subtitle && (
-            <div style={{color: '#a0a0a0', fontSize: '13px', marginTop: '4px'}}>
-              {subtitle}
-            </div>
-          )}
-        </div>
-        <div style={{
-          background: `${color}20`,
-          padding: '16px',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Icon size={28} color={color}/>
-        </div>
-      </div>
-    </div>
-  )
+  useEffect(() => {
+    filterMembers();
+  }, [members, searchTerm, activeFilters]);
 
-  const ActivityChart = () => (
-    <div className="card" style={{ marginTop: '32px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ color: '#ffffff', marginBottom: '8px' }}>Activity</h3>
-      </div>
+  useEffect(() => {
+    if (showAddModal || showEditModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showAddModal, showEditModal]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setViewMode('grid');
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const data = await getMembers();
+      setMembers(data.members);
+      setFilteredMembers(data.members);
       
-      {/* Feature Coming Soon Message */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        padding: '60px 20px',
-        textAlign: 'center'
-      }}>
-        <div>
-          <div style={{
-            fontSize: '48px',
-            marginBottom: '16px'
-          }}>🔧</div>
-          <h3 style={{ 
-            color: '#ffffff', 
-            marginBottom: '8px',
-            fontSize: '24px',
-            fontWeight: 600
-          }}>
-            Feature Coming Soon
-          </h3>
-          <p style={{ 
-            color: '#a0a0a0', 
-            fontSize: '16px',
-            margin: 0
-          }}>
-            Activity tracking and analytics will be available in the next update.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+      if (data.messages && data.messages.length > 0) {
+        data.messages.forEach(msg => {
+          addToast(msg.category, msg.message);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading members:', error);
+      addToast('error', 'Failed to load members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (memberId) => {
+    try {
+      await deleteMember(memberId);
+      setMembers(members.filter(member => member.id !== memberId));
+      addToast('success', 'Member deleted successfully');
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      addToast('error', 'Failed to delete member');
+    }
+  };
+
+  const handleAddMember = async (formData) => {
+    try {
+      await addMember(formData);
+      setShowAddModal(false);
+      addToast('success', 'Member added successfully');
+      fetchMembers();
+    } catch (error) {
+      console.error('Error adding member:', error);
+      addToast('error', 'Failed to add member');
+    }
+  };
+
+  const handleEditMember = async (formData) => {
+    try {
+      await updateMember(currentMember.id, formData);
+      setShowEditModal(false);
+      addToast('success', 'Member updated successfully');
+      fetchMembers();
+    } catch (error) {
+      console.error('Error updating member:', error);
+      addToast('error', 'Failed to update member');
+    }
+  };
+
+  const filterMembers = () => {
+    let filtered = [...members];
+    
+    if (activeFilters.length > 0) {
+      const statusFilter = activeFilters[0];
+      if (['Active', 'Near Expiry', 'Expired'].includes(statusFilter)) {
+        filtered = filtered.filter(member => member.status === statusFilter);
+      }
+    }
+    
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(member => 
+        member.name.toLowerCase().includes(term) || 
+        member.email.toLowerCase().includes(term) || 
+        member.phone.includes(term)
+      );
+    }
+    
+    setFilteredMembers(filtered);
+  };
+
+  const handleFilterSelect = (filter) => {
+    if (filter === 'All') {
+      setActiveFilters([]);
+      return;
+    }
+    
+    const isActive = activeFilters.includes(filter);
+    
+    if (isActive) {
+      setActiveFilters([]);
+    } else {
+      setActiveFilters([filter]);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters([]);
+  };
+
+  const openEditModal = (member) => {
+    const formattedMember = { ...member };
+    
+    ['join_date', 'end_date'].forEach(field => {
+      try {
+        if (formattedMember[field] && formattedMember[field].includes('/')) {
+          const [day, month, year] = formattedMember[field].split('/');
+          formattedMember[field] = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+      } catch (e) {
+        console.error(`Error formatting date ${field}:`, e);
+      }
+    });
+    
+    setCurrentMember(formattedMember);
+    setShowEditModal(true);
+  };
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setShowEditModal(false);
+  };
+  
+  const stopPropagation = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleViewChange = (view) => {
+    if (window.innerWidth >= 640 || view === 'grid') {
+      setViewMode(view);
+      localStorage.setItem('viewMode', view);
+    }
+  };
 
   return (
-    <div style={{ maxWidth: '1400px' }}>
-      {/* Page Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ 
-          color: '#ffffff', 
-          fontSize: '32px', 
-          fontWeight: 700,
-          marginBottom: '8px'
-        }}>
-          Dashboard
-        </h1>
-        <p style={{ color: '#a0a0a0', fontSize: '16px', margin: 0 }}>
-          Estatistics
-        </p>
+    <div className="min-h-screen bg-base-200 overflow-x-hidden">
+      <Header 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        openAddModal={() => setShowAddModal(true)} 
+      />
+      
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4 pt-2">
+        {loading ? (
+          <LoadingSkeleton />
+        ) : (
+          <>
+            <DashboardStats 
+              members={members} 
+              onFilterSelect={handleFilterSelect} 
+            />
+            
+            <SearchFilter 
+              searchTerm={searchTerm} 
+              onSearchChange={setSearchTerm} 
+              onFilterSelect={handleFilterSelect}
+              activeFilters={activeFilters}
+              onClearFilters={handleClearFilters}
+              viewMode={viewMode}
+              onViewChange={handleViewChange}
+            />
+            
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+                {filteredMembers.map(member => (
+                  <MemberCard 
+                    key={member.id} 
+                    member={member} 
+                    onDelete={handleDelete}
+                    onEdit={() => openEditModal(member)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2 member-list-view">
+                {filteredMembers.map(member => (
+                  <MemberListItem
+                    key={member.id}
+                    member={member}
+                    onDelete={handleDelete}
+                    onEdit={() => openEditModal(member)}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {filteredMembers.length === 0 && (
+              <div className="text-center py-10 bg-base-100 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-2">No members found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm 
+                    ? "No members match your search criteria." 
+                    : activeFilters.length > 0 
+                      ? "No members match the selected filters." 
+                      : "There are no members in the system yet."}
+                </p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  Add your first member
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {/* Stats Grid */}
-      <div className="grid dashboard-stats-grid" style={{
-        gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',
-        marginBottom: '32px'
-      }}>
-        <Card 
-          title="Employers" 
-          value="Coming Soon" 
-          icon={Users} 
-          color="#ff6b35"
-          subtitle="Feature Coming Soon"
-        />
-        <Card 
-          title="Customers" 
-          value={stats.total_members} 
-          icon={UserCheck} 
-          color="#ff6b35"
-          subtitle="Total members"
-        />
-        <Card 
-          title="Equipment" 
-          value="Coming Soon" 
-          icon={Dumbbell} 
-          color="#ff6b35"
-          subtitle="Feature Coming Soon"
-        />
-        <Card 
-          title="Classes" 
-          value="Coming Soon" 
-          icon={Calendar} 
-          color="#ff6b35"
-          subtitle="Feature Coming Soon"
-        />
-      </div>
-
-      {/* Activity Chart */}
-      <ActivityChart />
+      
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 overflow-y-auto"
+          onClick={closeModal}
+        >
+          <div 
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4 animate-fade-in"
+            onClick={stopPropagation}
+          >
+            <div className="p-2 text-right">
+              <button 
+                className="btn btn-sm btn-circle btn-ghost" 
+                onClick={closeModal}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-3 sm:px-4 pb-6">
+              <MemberForm 
+                formTitle="Add New Member" 
+                submitButtonText="Add Member" 
+                onSubmit={handleAddMember} 
+                onCancel={closeModal} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Member Modal */}
+      {showEditModal && currentMember && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 overflow-y-auto"
+          onClick={closeModal}
+        >
+          <div 
+            className="bg-base-100 rounded-lg shadow-xl w-full max-w-3xl my-4 animate-fade-in"
+            onClick={stopPropagation}
+          >
+            <div className="p-2 text-right">
+              <button 
+                className="btn btn-sm btn-circle btn-ghost" 
+                onClick={closeModal}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-3 sm:px-4 pb-6">
+              <MemberForm 
+                member={currentMember}
+                formTitle="Edit Member" 
+                submitButtonText="Update Member" 
+                onSubmit={handleEditMember} 
+                onCancel={closeModal} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
+
+// ✅ ONLY ONE DEFAULT EXPORT PER FILE!
+export default Dashboard;

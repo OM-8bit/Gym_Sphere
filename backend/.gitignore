@@ -1,3 +1,4 @@
+
 # Python cache
 __pycache__/
 *.py[cod]
@@ -5,6 +6,13 @@ __pycache__/
 
 # Environment variables
 .env
+=======
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
 
 # Distribution / packaging
 .Python
@@ -19,9 +27,14 @@ lib64/
 parts/
 sdist/
 var/
+
+=======
+wheels/
+
 *.egg-info/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -32,17 +45,51 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+=======
+# Virtual environments
+venv/
+env/
+ENV/
+myenv/
+.env/
+.venv/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+>>>>>>> cad1b703f05e1bc4790207f9f476a44e24419e81
 
 # Unit test / coverage reports
 htmlcov/
 .tox/
+
 .nox/
+
+
 .coverage
 .coverage.*
 .cache
 nosetests.xml
 coverage.xml
 *.cover
+
 *.py,cover
 .hypothesis/
 .pytest_cache/
@@ -69,9 +116,14 @@ docs/_build/
 
 # PyBuilder
 target/
+=======
+.hypothesis/
+.pytest_cache/
+>>>>>>> cad1b703f05e1bc4790207f9f476a44e24419e81
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
 
 # IPython
 profile_default/
@@ -126,3 +178,8 @@ tmp/
 temp/
 *.tmp
 *.temp
+=======
+# Local development settings
+instance/
+local_settings.py
+
