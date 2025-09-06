@@ -58,15 +58,10 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174","http://localhost:3001",   # frontend container
-    "http://localhost:3000",   # if you also use 3000 locally
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:3000",],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174","http://localhost:3001", "http://localhost:3000", "http://127.0.0.1:3001", "http://127.0.0.1:3000"],
     allow_credentials=True,
-    #allow_origins=allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
-
 )
 
 # Pydantic Models
@@ -85,7 +80,7 @@ class MemberCreate(BaseModel):
     email: EmailStr
     phone: Optional[str] = None
     membership_type: str
-    card_number: Optional[str] = None  # Now comes from QR scan
+    card_number: Optional[str] = None
     create_login: Optional[bool] = True
 
 class CardBatch(BaseModel):
@@ -108,7 +103,6 @@ class MemberUpdate(BaseModel):
     membership_type: Optional[str] = None
     is_active: Optional[bool] = None
 
-# NEW: QR Card Scan Model
 class QRCardScanRequest(BaseModel):
     qr_data: str
 
@@ -215,37 +209,26 @@ async def login(user: UserLogin):
         logger.error(f"Login error: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-# NEW: QR Card Assignment Endpoints
+# QR Card Assignment Endpoints
 @app.post("/api/admin/scan-card-qr")
 async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_current_user)):
     """Scan QR code from physical card to validate and prepare for assignment"""
     try:
-        # Extract card number from QR data
         qr_data = request.qr_data.strip()
-        
-        # Support multiple QR formats:
-        # Format 1: "ABC001" (simple card number)
-        # Format 2: "gymsphere:ABC001" (prefixed format)
-        # Format 3: "https://yourdomain.com/card/ABC001" (URL format)
-        
         card_number = None
         
         if ":" in qr_data:
-            # Handle prefixed format: "gymsphere:ABC001"
             parts = qr_data.split(":")
             if len(parts) >= 2:
-                card_number = parts[-1]  # Get last part as card number
+                card_number = parts[-1]
         elif "/" in qr_data:
-            # Handle URL format: "https://yourdomain.com/card/ABC001"
             card_number = qr_data.split("/")[-1]
         else:
-            # Handle simple format: "ABC001"
             card_number = qr_data
         
         if not card_number:
             raise HTTPException(status_code=400, detail="Invalid QR code format")
         
-        # Validate card exists and is available
         card_result = supabase_admin.table("card_inventory").select("*").eq(
             "card_number", card_number
         ).eq("gym_owner_email", current_user["email"]).single().execute()
@@ -267,7 +250,6 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
                 "current_status": card["status"]
             }
         
-        # Card is valid and available
         return {
             "success": True,
             "message": f"✅ Card {card_number} ready for assignment",
@@ -310,7 +292,6 @@ async def validate_card_for_assignment(card_number: str, current_user=Depends(ge
         logger.error(f"Card validation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# NEW: Generate QR codes for card printing
 @app.post("/api/admin/generate-card-qr-batch")
 async def generate_card_qr_batch(batch: CardBatch, current_user=Depends(get_current_user)):
     """Generate QR codes for physical card printing"""
@@ -322,11 +303,8 @@ async def generate_card_qr_batch(batch: CardBatch, current_user=Depends(get_curr
         
         for i in range(batch.start, batch.end + 1):
             card_number = f"{batch.prefix}{i:03d}"
-            
-            # Generate QR code containing just the card number
             qr_data = f"gymsphere:{card_number}"
             
-            # Create QR code image
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -336,7 +314,6 @@ async def generate_card_qr_batch(batch: CardBatch, current_user=Depends(get_curr
             qr.add_data(qr_data)
             qr.make(fit=True)
             
-            # Convert to base64 for response
             qr_img = qr.make_image(fill_color="black", back_color="white")
             buffer = io.BytesIO()
             qr_img.save(buffer, format='PNG')
@@ -358,7 +335,7 @@ async def generate_card_qr_batch(batch: CardBatch, current_user=Depends(get_curr
         logger.error(f"QR batch generation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# Card Management Endpoints (Updated)
+# Card Management Endpoints
 @app.post("/api/admin/add-card-batch")
 async def add_card_batch(batch: CardBatch, current_user=Depends(get_current_user)):
     """Add a batch of cards to inventory"""
@@ -379,7 +356,6 @@ async def add_card_batch(batch: CardBatch, current_user=Depends(get_current_user
                 "created_at": datetime.now().isoformat()
             })
         
-        # Check for duplicate card numbers
         existing_cards = supabase_admin.table("card_inventory").select("card_number").in_(
             "card_number", [card["card_number"] for card in cards]
         ).execute()
@@ -388,7 +364,6 @@ async def add_card_batch(batch: CardBatch, current_user=Depends(get_current_user
             duplicate_numbers = [card["card_number"] for card in existing_cards.data]
             raise HTTPException(status_code=400, detail=f"Cards already exist: {', '.join(duplicate_numbers[:5])}")
         
-        # Insert cards into card_inventory table
         result = supabase_admin.table("card_inventory").insert(cards).execute()
         
         return {
@@ -446,19 +421,17 @@ async def update_card_status(card_number: str, status: str, current_user=Depends
         logger.error(f"Update card status error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# Member Management Endpoints (Updated for QR Assignment)
+# Member Management Endpoints
 @app.post("/api/members")
 async def add_member(member: MemberCreate, current_user=Depends(get_current_user)):
     """Register member with QR-scanned card assignment"""
     try:
-        # Check if member already exists
         exists = supabase_admin.table("members").select("id").eq("email", member.email).eq(
             "owner_email", current_user["email"]
         ).execute()
         if exists.data:
             raise HTTPException(status_code=400, detail="Member with this email already exists.")
 
-        # Validate scanned card if provided
         if member.card_number:
             card_check = supabase_admin.table("card_inventory").select("*").eq(
                 "card_number", member.card_number
@@ -469,7 +442,6 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
             if card_check.data["status"] != CARD_STATUS_AVAILABLE:
                 raise HTTPException(status_code=400, detail=f"Card not available. Status: {card_check.data['status']}")
 
-        # Calculate subscription dates
         start_date = datetime.now()
         if member.membership_type == "monthly":
             end_date = start_date + timedelta(days=30)
@@ -480,7 +452,6 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
         else:
             raise HTTPException(status_code=400, detail="Invalid membership type. Must be: monthly, quarterly, or yearly")
 
-        # Create member data
         member_data = {
             "full_name": member.full_name,
             "email": member.email,
@@ -493,14 +464,12 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
             "owner_email": current_user["email"]
         }
 
-        # Insert member into database
         result = supabase_admin.table("members").insert(member_data).execute()
         if not result.data:
             raise HTTPException(status_code=400, detail="Failed to add member.")
 
         created_member = result.data[0]
 
-        # INSTANTLY assign scanned card
         if member.card_number:
             supabase_admin.table("card_inventory").update({
                 "status": CARD_STATUS_ASSIGNED,
@@ -508,7 +477,6 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
                 "assigned_at": datetime.now().isoformat()
             }).eq("card_number", member.card_number).execute()
 
-        # Create login credentials if requested
         auth_created = False
         auth_error = None
         
@@ -548,6 +516,71 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
         
     except Exception as e:
         logger.error(f"Add member error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+# NEW: Assign QR Card to Existing Member
+@app.post("/api/members/{member_id}/assign-card/{card_number}")
+async def assign_card_to_member(member_id: int, card_number: str, current_user=Depends(get_current_user)):
+    """Assign a QR card to an existing member"""
+    try:
+        card_check = supabase_admin.table("card_inventory").select("*").eq(
+            "card_number", card_number
+        ).eq("gym_owner_email", current_user["email"]).single().execute()
+        if not card_check.data:
+            raise HTTPException(status_code=404, detail="Card not found.")
+        if card_check.data["status"] != CARD_STATUS_AVAILABLE:
+            raise HTTPException(status_code=400, detail=f"Card not available: {card_check.data['status']}")
+        
+        member_result = supabase_admin.table("members").select("*").eq("id", member_id).eq(
+            "owner_email", current_user["email"]).single().execute()
+        if not member_result.data:
+            raise HTTPException(status_code=404, detail="Member not found.")
+
+        prev_card_number = member_result.data.get("card_number")
+        if prev_card_number:
+            supabase_admin.table("card_inventory").update({
+                "status": CARD_STATUS_AVAILABLE,
+                "assigned_to_member_id": None,
+                "assigned_at": None
+            }).eq("card_number", prev_card_number).execute()
+
+        supabase_admin.table("members").update({
+            "card_number": card_number
+        }).eq("id", member_id).execute()
+
+        supabase_admin.table("card_inventory").update({
+            "status": CARD_STATUS_ASSIGNED,
+            "assigned_to_member_id": member_id,
+            "assigned_at": datetime.now().isoformat()
+        }).eq("card_number", card_number).execute()
+
+        return {"message": f"Card {card_number} assigned to member {member_id}."}
+
+    except Exception as e:
+        logger.error(f"Assign card error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/members/{member_id}/unassign-card")
+async def unassign_card_from_member(member_id: int, current_user=Depends(get_current_user)):
+    """Remove QR card from a member"""
+    try:
+        member = supabase_admin.table("members").select("*").eq("id", member_id).eq(
+            "owner_email", current_user["email"]
+        ).single().execute()
+        if not member.data or not member.data.get("card_number"):
+            raise HTTPException(status_code=404, detail="Member or card not found.")
+        card_number = member.data["card_number"]
+        supabase_admin.table("members").update({
+            "card_number": None
+        }).eq("id", member_id).execute()
+        supabase_admin.table("card_inventory").update({
+            "status": CARD_STATUS_AVAILABLE,
+            "assigned_to_member_id": None,
+            "assigned_at": None
+        }).eq("card_number", card_number).execute()
+        return {"message": f"Card {card_number} unassigned from member."}
+    except Exception as e:
+        logger.error(f"Unassign card error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/members")
@@ -604,7 +637,6 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
         
         member = member_result.data[0]
         
-        # Release card back to available status
         if member.get("card_number"):
             supabase_admin.table("card_inventory").update({
                 "status": CARD_STATUS_AVAILABLE,
@@ -612,10 +644,8 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
                 "assigned_at": None
             }).eq("card_number", member["card_number"]).execute()
         
-        # Delete from members table
         supabase_admin.table("members").delete().eq("id", id).execute()
         
-        # Delete auth user if exists
         try:
             users_result = supabase_admin.auth.admin.list_users()
             if users_result.users:
@@ -632,6 +662,57 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
         logger.error(f"Delete member error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
+# NEW: QR Card Scanning for Gym Entry
+@app.get("/api/qr/scan/{card_number}")
+async def scan_qr_card(card_number: str, current_user=Depends(get_current_user)):
+    """Scan QR card and get member info with live subscription status"""
+    try:
+        # Find card
+        card_result = supabase_admin.table("card_inventory").select("*").eq("card_number", card_number).execute()
+        if not card_result.data:
+            raise HTTPException(status_code=404, detail="Card not found")
+        
+        card = card_result.data[0]
+        if card["status"] != CARD_STATUS_ASSIGNED:
+            raise HTTPException(status_code=400, detail="Card not assigned to any member")
+        
+        # Find member
+        member_result = supabase_admin.table("members").select("*").eq("card_number", card_number).eq("owner_email", current_user["email"]).execute()
+        if not member_result.data:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        member = member_result.data[0]
+        
+        # Check live subscription status
+        subscription_end = datetime.fromisoformat(member["subscription_end"].replace("Z", "+00:00"))
+        is_subscription_valid = subscription_end > datetime.now(timezone.utc)
+        is_active = is_subscription_valid and member["is_active"]
+        
+        # Log access attempt
+        log_data = {
+            "member_id": member["id"],
+            "access_type": "card_scan",
+            "access_granted": is_active,
+            "card_number": card_number,
+            "timestamp": datetime.now().isoformat(),
+            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive")
+        }
+        supabase_admin.table("access_logs").insert(log_data).execute()
+        
+        return {
+            "member_name": member["full_name"],
+            "email": member["email"],
+            "member_id": member["id"],
+            "status": "Active" if is_active else "Expired",
+            "membership_type": member["membership_type"],
+            "subscription_end": member["subscription_end"],
+            "access_granted": is_active,
+            "message": f"✅ Welcome {member['full_name']}!" if is_active else "❌ Access Denied - Subscription Issue"
+        }
+    except Exception as e:
+        logger.error(f"Scan QR card error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 # Card Access & Verification
 @app.post("/api/card/verify")
 async def verify_card(request: CardVerifyRequest):
@@ -642,7 +723,6 @@ async def verify_card(request: CardVerifyRequest):
         ).single().execute()
         
         if not member_result.data:
-            # Log failed access attempt
             log_data = {
                 "member_id": None,
                 "access_type": "card",
@@ -662,12 +742,10 @@ async def verify_card(request: CardVerifyRequest):
             
         member = member_result.data[0]
         
-        # Check subscription status
         subscription_end = datetime.fromisoformat(member["subscription_end"].replace("Z", "+00:00"))
         is_subscription_valid = subscription_end > datetime.now(timezone.utc)
         is_active = is_subscription_valid and member["is_active"]
         
-        # Log the access attempt
         log_data = {
             "member_id": member["id"],
             "access_type": "card",
@@ -781,7 +859,6 @@ async def verify_qr(request: QRVerifyRequest):
         is_subscription_valid = subscription_end > datetime.now(timezone.utc)
         is_active = is_subscription_valid and member["is_active"]
 
-        # Log the access attempt
         log_data = {
             "member_id": member["id"],
             "access_type": "qr",
@@ -813,23 +890,20 @@ async def verify_qr(request: QRVerifyRequest):
     except Exception as e:
         logger.error(f"QR verify error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-# When gym owner scans QR during registration
+
 @app.post("/api/admin/scan-new-card")
 async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_current_user)):
-    qr_data = request.qr_data  # "gymsphere:ABC001"
-    card_number = qr_data.split(":")[-1]  # Extract "ABC001"
+    qr_data = request.qr_data
+    card_number = qr_data.split(":")[-1]
     
-    # Check if card already exists
     existing_card = supabase_admin.table("card_inventory").select("*").eq("card_number", card_number).execute()
     
     if existing_card.data:
-        # Card already registered
         if existing_card.data[0]["status"] == "assigned":
             return {"success": False, "message": "Card already assigned"}
         else:
             return {"success": True, "message": "Card available", "card_number": card_number}
     else:
-        # NEW CARD - Create entry on first scan
         new_card = {
             "card_number": card_number,
             "status": "available", 
@@ -927,7 +1001,6 @@ async def dashboard_stats(current_user: dict = Depends(get_current_user)):
             if datetime.fromisoformat(member["created_at"].replace('Z', '+00:00')) >= start_of_month
         )
 
-        # Card statistics
         cards_result = supabase_admin.table("card_inventory").select("status").eq(
             "gym_owner_email", current_user["email"]
         ).execute()
@@ -938,7 +1011,6 @@ async def dashboard_stats(current_user: dict = Depends(get_current_user)):
         assigned_cards = sum(1 for card in cards if card["status"] == CARD_STATUS_ASSIGNED)
         lost_damaged_cards = sum(1 for card in cards if card["status"] in [CARD_STATUS_LOST, CARD_STATUS_DAMAGED])
 
-        # Today's access count
         today = datetime.now().date()
         access_today_result = supabase_admin.table("access_logs").select("id").gte(
             "timestamp", today.isoformat()
@@ -970,7 +1042,6 @@ async def get_access_logs(limit: int = 50, current_user=Depends(get_current_user
             members(full_name, email, card_number, membership_type)
         """).eq("members.owner_email", current_user["email"]).order("created_at", desc=True).limit(limit).execute()
         
-        # Transform the data to match frontend expectations
         logs = []
         for log in result.data or []:
             transformed_log = {
