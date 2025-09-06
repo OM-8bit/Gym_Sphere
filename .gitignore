@@ -58,7 +58,7 @@ ADMIN_CONTEXT.md
 *.pyd
 
 # Large asset files (keep in public folder but don't commit)
-frontend/public/*.jpg
-frontend/public/*.png
-frontend/public/*.mp4
-frontend/public/*.gif
+# frontend/public/*.jpg
+# frontend/public/*.png
+# frontend/public/*.mp4
+# frontend/public/*.gif
