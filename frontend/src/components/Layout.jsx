@@ -2,7 +2,8 @@
 import { NavLink } from 'react-router-dom'
 import { Dumbbell, Home, Users, UserPlus, QrCode, ScanLine, FileText, Settings, LogOut, Menu, X, Search, Bell, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import logoImage from '../assets/logo_image_dashboard.png'
+// Assets moved to public folder - use public URL
+const logoImage = '/logo_image_dashboard.png'
 import '../styles/responsive.css'
 
 const linkBase = {

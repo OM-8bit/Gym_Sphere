@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api.js'
-import loginSideImage from '../assets/login-page-side-image.jpg'
-import logoImage from '../assets/logo_image.png'
+// Assets moved to public folder - use public URLs
+const loginSideImage = '/login-page-side-image.jpg'
+const logoImage = '/logo_image.png'
 
 export default function Signup() {
   const navigate = useNavigate()

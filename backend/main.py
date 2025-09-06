@@ -970,7 +970,19 @@ async def get_access_logs(limit: int = 50, current_user=Depends(get_current_user
             members(full_name, email, card_number, membership_type)
         """).eq("members.owner_email", current_user["email"]).order("created_at", desc=True).limit(limit).execute()
         
-        return {"logs": result.data, "count": len(result.data or [])}
+        # Transform the data to match frontend expectations
+        logs = []
+        for log in result.data or []:
+            transformed_log = {
+                "timestamp": log.get("created_at") or log.get("timestamp"),
+                "member_name": log.get("members", {}).get("full_name") if log.get("members") else None,
+                "member_id": log.get("member_id"),
+                "status": log.get("access_granted", True) and "Granted" or "Denied",
+                "method": log.get("access_method", "Unknown")
+            }
+            logs.append(transformed_log)
+        
+        return {"logs": logs, "count": len(logs)}
     except Exception as e:
         logger.error(f"Access logs error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))

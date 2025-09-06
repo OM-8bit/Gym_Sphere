@@ -8,8 +8,12 @@ export default function AccessLogs() {
     (async () => {
       try {
         const { data } = await api.get('/api/access/logs')
-        setRows(data)
-      } catch {}
+        // Backend returns {logs: [...], count: number}
+        setRows(data.logs || [])
+      } catch (error) {
+        console.error('Failed to fetch access logs:', error)
+        setRows([])
+      }
     })()
   }, [])
 
