@@ -81,3 +81,6 @@ pnpm-lock.yaml
 # Temporary folders
 tmp/
 temp/
+
+# Development documentation
+QR_scan_roadmap.md
