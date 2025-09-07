@@ -2,19 +2,44 @@
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api.js'
 import toast from 'react-hot-toast'
-import { ArrowLeft, User, Mail, Phone, CreditCard, Calendar } from 'lucide-react'
+import { ArrowLeft, User, Mail, Phone, CreditCard, Calendar, QrCode, Camera } from 'lucide-react'
+import { QRScannerModal } from '../components/QRScanner'
 
 export default function AddMember() {
   const nav = useNavigate()
   const [form, setForm] = useState({ full_name:'', email:'', phone:'', membership_type:'monthly', card_id:'' })
   const [loading, setLoading] = useState(false)
+  const [showQRScanner, setShowQRScanner] = useState(false)
+  const [qrScanResult, setQrScanResult] = useState(null)
 
   const submit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await api.post('/api/members', form)
-      toast.success('Member added successfully')
+      // Workflow 1: Step 4 - Create member with validated card
+      // Map frontend form fields to backend expected fields
+      const memberData = {
+        full_name: form.full_name,
+        email: form.email,
+        phone: form.phone,
+        membership_type: form.membership_type,
+        card_number: form.card_id, // Map card_id to card_number for backend
+        create_login: true
+      }
+      
+      const response = await api.post('/api/members', memberData)
+      
+      if (form.card_id && qrScanResult?.success) {
+        // If a QR card was scanned and validated, show enhanced success message
+        toast.success(`Member "${form.full_name}" created and assigned to card "${form.card_id}"!`)
+      } else if (form.card_id) {
+        // Manual card ID entered
+        toast.success(`Member "${form.full_name}" created with card ID "${form.card_id}"!`)
+      } else {
+        // No card assigned
+        toast.success(`Member "${form.full_name}" created successfully!`)
+      }
+      
       nav('/members')
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Failed to add member')
@@ -22,6 +47,83 @@ export default function AddMember() {
   }
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+
+  const handleQRScan = async (qrData) => {
+    try {
+      console.log('QR Code scanned:', qrData)
+      
+      // Workflow 1: Member Registration with QR
+      // Step 1: Validate scanned card with backend
+      toast.loading('Validating card...', { id: 'card-validation' })
+      
+      let cardScanResult
+      try {
+        // Try existing card validation first
+        cardScanResult = await api.post('/api/admin/scan-card-qr', {
+          qr_data: qrData
+        })
+        
+        if (cardScanResult.data.success) {
+          toast.success('Card validated successfully!', { id: 'card-validation' })
+        }
+      } catch (error) {
+        console.log('Card not found in inventory, trying new card activation...', error)
+        
+        // If card doesn't exist, try new card activation
+        try {
+          cardScanResult = await api.post('/api/admin/scan-new-card', {
+            qr_data: qrData
+          })
+          
+          if (cardScanResult.data.success) {
+            toast.success('New card activated and ready for assignment!', { id: 'card-validation' })
+          }
+        } catch (newCardError) {
+          console.error('Both scan methods failed:', newCardError)
+          toast.error('Failed to validate or activate card', { id: 'card-validation' })
+          throw new Error(`Card validation failed: ${newCardError.response?.data?.detail || newCardError.message}`)
+        }
+      }
+
+      // Extract card ID from backend response
+      const cardId = cardScanResult.data.card_number || cardScanResult.data.cardId
+      
+      if (!cardId) {
+        throw new Error('No card ID returned from backend')
+      }
+
+      // Update form with validated card ID
+      setForm(prev => ({ ...prev, card_id: cardId }))
+      setQrScanResult({
+        success: true,
+        message: cardScanResult.data.message || 'Card validated successfully!',
+        cardId: cardId,
+        status: cardScanResult.data.status,
+        isNewCard: cardScanResult.data.is_new_card || false
+      })
+      
+      toast.success(`Card "${cardId}" ready for member assignment!`)
+      setShowQRScanner(false)
+      
+    } catch (error) {
+      console.error('QR Scan Error:', error)
+      setQrScanResult({
+        success: false,
+        message: error.message || 'Failed to scan QR code',
+        error: error.message
+      })
+      toast.error(error.message || 'Failed to scan QR code')
+    }
+  }
+
+  const openQRScanner = () => {
+    setQrScanResult(null)
+    setShowQRScanner(true)
+  }
+
+  const closeQRScanner = () => {
+    setShowQRScanner(false)
+  }
 
   return (
     <div style={{ maxWidth: '800px' }}>
@@ -128,25 +230,106 @@ export default function AddMember() {
             </div>
           </div>
 
-          {/* Card ID - Full Width */}
+          {/* Card ID - Full Width with QR Scanner */}
           <div style={{ marginBottom: '32px' }}>
             <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CreditCard size={16} color="#ff6b35" />
               Card ID (Optional)
             </label>
-            <input 
-              className="input" 
-              value={form.card_id} 
-              onChange={set('card_id')} 
-              placeholder="Enter card ID (e.g., CARD001)"
-            />
+            
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <input 
+                className="input" 
+                value={form.card_id} 
+                onChange={set('card_id')} 
+                placeholder="Enter card ID or scan QR code"
+                style={{ flex: 1 }}
+              />
+              
+              <button
+                type="button"
+                onClick={openQRScanner}
+                style={{
+                  background: '#ff6b35',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  minWidth: '140px',
+                  justifyContent: 'center'
+                }}
+                title="Scan QR Code"
+              >
+                <QrCode size={16} />
+                Scan QR
+              </button>
+            </div>
+            
             <div style={{ 
               color: '#a0a0a0', 
               fontSize: '14px', 
               marginTop: '6px' 
             }}>
-              Leave blank to auto-generate a card ID
+              Leave blank to auto-generate a card ID, or scan a QR code from an existing card
             </div>
+
+            {/* QR Scan Result Display - Enhanced for Workflow 1 */}
+            {qrScanResult && (
+              <div style={{
+                marginTop: '12px',
+                padding: '12px',
+                borderRadius: '8px',
+                background: qrScanResult.success 
+                  ? 'rgba(16, 185, 129, 0.1)' 
+                  : 'rgba(239, 68, 68, 0.1)',
+                border: qrScanResult.success 
+                  ? '1px solid rgba(16, 185, 129, 0.3)' 
+                  : '1px solid rgba(239, 68, 68, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <QrCode size={16} color={qrScanResult.success ? '#10b981' : '#ef4444'} />
+                <div style={{ flex: 1 }}>
+                  <p style={{
+                    color: qrScanResult.success ? '#10b981' : '#ef4444',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    margin: 0
+                  }}>
+                    {qrScanResult.message}
+                  </p>
+                  {qrScanResult.success && qrScanResult.cardId && (
+                    <div style={{ marginTop: '4px' }}>
+                      <p style={{
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        margin: 0,
+                        fontWeight: '500'
+                      }}>
+                        Card ID: {qrScanResult.cardId}
+                      </p>
+                      {qrScanResult.status && (
+                        <p style={{
+                          color: '#a0a0a0',
+                          fontSize: '12px',
+                          margin: 0
+                        }}>
+                          Status: {qrScanResult.status} 
+                          {qrScanResult.isNewCard && ' (New card activated)'}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -202,10 +385,21 @@ export default function AddMember() {
         }}>
           <li>Email addresses must be unique for each member</li>
           <li>Phone numbers help with quick member lookup</li>
-          <li>Card IDs are used for gym access control</li>
+          <li>Card IDs can be entered manually or scanned using QR codes</li>
+          <li>QR scanner supports multiple card formats (GymSphere, generic, URL)</li>
           <li>Monthly memberships renew automatically</li>
         </ul>
       </div>
+
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={showQRScanner}
+        onClose={closeQRScanner}
+        onScan={handleQRScan}
+        scanMode="registration"
+        title="Scan Card QR Code"
+        description="Position the QR code from the gym card within the frame"
+      />
     </div>
   )
 }

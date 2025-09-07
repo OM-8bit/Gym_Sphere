@@ -457,7 +457,7 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
             "email": member.email,
             "phone": member.phone,
             "membership_type": member.membership_type,
-            "card_number": member.card_number,
+            "card_id": member.card_number,  # Use card_id to match your database schema
             "subscription_start": start_date.isoformat(),
             "subscription_end": end_date.isoformat(),
             "is_active": True,
@@ -470,12 +470,18 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
 
         created_member = result.data[0]
 
+        # Update card status to assigned if card was provided
         if member.card_number:
-            supabase_admin.table("card_inventory").update({
+            card_update_result = supabase_admin.table("card_inventory").update({
                 "status": CARD_STATUS_ASSIGNED,
                 "assigned_to_member_id": created_member["id"],
-                "assigned_at": datetime.now().isoformat()
-            }).eq("card_number", member.card_number).execute()
+                "assigned_date": datetime.now().isoformat()  # Use assigned_date to match your schema
+            }).eq("card_number", member.card_number).eq("gym_owner_email", current_user["email"]).execute()
+            
+            if not card_update_result.data:
+                logger.error(f"Failed to update card {member.card_number} status to assigned")
+            else:
+                logger.info(f"Card {member.card_number} assigned to member {created_member['id']}")
 
         auth_created = False
         auth_error = None
@@ -536,22 +542,22 @@ async def assign_card_to_member(member_id: int, card_number: str, current_user=D
         if not member_result.data:
             raise HTTPException(status_code=404, detail="Member not found.")
 
-        prev_card_number = member_result.data.get("card_number")
+        prev_card_number = member_result.data.get("card_id")  # Use card_id to match schema
         if prev_card_number:
             supabase_admin.table("card_inventory").update({
                 "status": CARD_STATUS_AVAILABLE,
                 "assigned_to_member_id": None,
-                "assigned_at": None
+                "assigned_date": None  # Use assigned_date to match schema
             }).eq("card_number", prev_card_number).execute()
 
         supabase_admin.table("members").update({
-            "card_number": card_number
+            "card_id": card_number  # Use card_id to match schema
         }).eq("id", member_id).execute()
 
         supabase_admin.table("card_inventory").update({
             "status": CARD_STATUS_ASSIGNED,
             "assigned_to_member_id": member_id,
-            "assigned_at": datetime.now().isoformat()
+            "assigned_date": datetime.now().isoformat()  # Use assigned_date to match schema
         }).eq("card_number", card_number).execute()
 
         return {"message": f"Card {card_number} assigned to member {member_id}."}
@@ -567,16 +573,16 @@ async def unassign_card_from_member(member_id: int, current_user=Depends(get_cur
         member = supabase_admin.table("members").select("*").eq("id", member_id).eq(
             "owner_email", current_user["email"]
         ).single().execute()
-        if not member.data or not member.data.get("card_number"):
+        if not member.data or not member.data.get("card_id"):  # Use card_id to match schema
             raise HTTPException(status_code=404, detail="Member or card not found.")
-        card_number = member.data["card_number"]
+        card_number = member.data["card_id"]  # Use card_id to match schema
         supabase_admin.table("members").update({
-            "card_number": None
+            "card_id": None  # Use card_id to match schema
         }).eq("id", member_id).execute()
         supabase_admin.table("card_inventory").update({
             "status": CARD_STATUS_AVAILABLE,
             "assigned_to_member_id": None,
-            "assigned_at": None
+            "assigned_date": None  # Use assigned_date to match schema
         }).eq("card_number", card_number).execute()
         return {"message": f"Card {card_number} unassigned from member."}
     except Exception as e:
@@ -637,12 +643,12 @@ async def delete_member(id: int, current_user=Depends(get_current_user)):
         
         member = member_result.data[0]
         
-        if member.get("card_number"):
+        if member.get("card_id"):  # Use card_id to match schema
             supabase_admin.table("card_inventory").update({
                 "status": CARD_STATUS_AVAILABLE,
                 "assigned_to_member_id": None,
-                "assigned_at": None
-            }).eq("card_number", member["card_number"]).execute()
+                "assigned_date": None  # Use assigned_date to match schema
+            }).eq("card_number", member["card_id"]).execute()  # card_number is still the field in card_inventory
         
         supabase_admin.table("members").delete().eq("id", id).execute()
         
@@ -828,7 +834,7 @@ async def generate_qr(request: QRRequest):
             "member": {
                 "id": member["id"],
                 "name": member["full_name"],
-                "card_number": member.get("card_number"),
+                "card_number": member.get("card_id"),  # Use card_id from database
                 "subscription_end": member["subscription_end"],
             },
         }
@@ -875,7 +881,7 @@ async def verify_qr(request: QRVerifyRequest):
                     "id": member["id"],
                     "name": member["full_name"],
                     "membership_type": member["membership_type"],
-                    "card_number": member.get("card_number"),
+                    "card_number": member.get("card_id"),  # Use card_id from database
                 },
                 "message": f"✅ Welcome {member['full_name']}!",
                 "timestamp": datetime.now().isoformat()
@@ -893,32 +899,69 @@ async def verify_qr(request: QRVerifyRequest):
 
 @app.post("/api/admin/scan-new-card")
 async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_current_user)):
-    qr_data = request.qr_data
-    card_number = qr_data.split(":")[-1]
-    
-    existing_card = supabase_admin.table("card_inventory").select("*").eq("card_number", card_number).execute()
-    
-    if existing_card.data:
-        if existing_card.data[0]["status"] == "assigned":
-            return {"success": False, "message": "Card already assigned"}
-        else:
-            return {"success": True, "message": "Card available", "card_number": card_number}
-    else:
-        new_card = {
-            "card_number": card_number,
-            "status": "available", 
-            "gym_owner_email": current_user["email"],
-            "created_at": datetime.now().isoformat(),
-            "first_scanned_at": datetime.now().isoformat()
-        }
-        supabase_admin.table("card_inventory").insert(new_card).execute()
+    """Auto-activate new cards when first scanned"""
+    try:
+        qr_data = request.qr_data.strip()
+        card_number = None
         
-        return {
-            "success": True, 
-            "message": f"New card {card_number} activated and ready!", 
-            "card_number": card_number,
-            "is_new_card": True
-        }
+        # Parse QR data to extract card number
+        if "gymsphere:" in qr_data.lower():
+            card_number = qr_data.split(":")[-1]
+        elif ":" in qr_data:
+            parts = qr_data.split(":")
+            if len(parts) >= 2:
+                card_number = parts[-1]
+        elif "/" in qr_data:
+            card_number = qr_data.split("/")[-1]
+        else:
+            card_number = qr_data
+        
+        if not card_number:
+            raise HTTPException(status_code=400, detail="Invalid QR code format")
+        
+        # Check if card already exists
+        existing_card = supabase_admin.table("card_inventory").select("*").eq(
+            "card_number", card_number
+        ).eq("gym_owner_email", current_user["email"]).execute()
+        
+        if existing_card.data:
+            card = existing_card.data[0]
+            if card["status"] == "assigned":
+                return {
+                    "success": False, 
+                    "message": f"Card {card_number} already assigned",
+                    "card_number": card_number,
+                    "status": card["status"]
+                }
+            else:
+                return {
+                    "success": True, 
+                    "message": f"Card {card_number} available for assignment",
+                    "card_number": card_number,
+                    "status": card["status"]
+                }
+        else:
+            # Create new card in inventory
+            new_card = {
+                "card_number": card_number,
+                "status": "available", 
+                "gym_owner_email": current_user["email"],
+                "created_at": datetime.now().isoformat()
+            }
+            
+            result = supabase_admin.table("card_inventory").insert(new_card).execute()
+            
+            return {
+                "success": True, 
+                "message": f"New card {card_number} activated and ready for assignment!", 
+                "card_number": card_number,
+                "status": "available",
+                "is_new_card": True
+            }
+            
+    except Exception as e:
+        logger.error(f"Scan new card error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to scan card: {str(e)}")
 
 # Member Utility Endpoints
 @app.post("/api/members/{member_id}/reset-password")
@@ -966,7 +1009,7 @@ async def get_member_credentials(member_id: int, current_user=Depends(get_curren
         return {
             "member_name": member["full_name"],
             "email": member["email"],
-            "card_number": member.get("card_number", "Not assigned"),
+            "card_number": member.get("card_id", "Not assigned"),  # Use card_id from database
             "default_password": DEFAULT_MEMBER_PASSWORD,
             "member_portal_url": "http://localhost:5173",
             "instructions": "Share these credentials with the member to access their portal."
