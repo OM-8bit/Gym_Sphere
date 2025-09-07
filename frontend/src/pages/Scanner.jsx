@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { QrCode, Clock, CheckCircle, AlertTriangle, ArrowLeft, RefreshCw, User, CreditCard } from 'lucide-react'
 import { QRScanner, QRScanResult } from '../components/QRScanner'
 import qrScannerService from '../services/qrScanner'
+import api from '../services/api'
 import toast from 'react-hot-toast'
 
 export default function Scanner() {
@@ -66,22 +67,15 @@ export default function Scanner() {
         // Scan for existing card (access control)
         result = await qrScannerService.scanCardQR(qrData)
       } else {
-        // Registration mode - validate QR format only
-        const validation = qrScannerService.validateQRCode(qrData)
-        if (!validation.isValid) {
-          throw new Error(validation.error)
-        }
-        
-        result = {
-          success: true,
-          message: 'QR Code validated successfully',
-          details: 'Card is ready for registration',
-          card: {
-            card_id: validation.parsed.cardId,
-            card_type: validation.parsed.cardType,
-            is_active: false
-          },
-          rawData: qrData
+        // Registration mode - Register new card in inventory
+        try {
+          result = await api.post('/api/admin/scan-new-card', {
+            qr_data: qrData
+          })
+          result = result.data
+        } catch (error) {
+          console.error('Registration scan error:', error)
+          throw new Error(error.response?.data?.detail || 'Failed to register card')
         }
       }
 
@@ -297,7 +291,7 @@ export default function Scanner() {
             }}>
               {scanMode === 'access' 
                 ? 'Scan member cards to grant gym access'
-                : 'Scan new cards to prepare them for member registration'
+                : 'Scan new physical cards to register them in your card inventory'
               }
             </p>
           </div>

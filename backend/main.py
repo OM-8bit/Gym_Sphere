@@ -227,25 +227,48 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
             card_number = qr_data
         
         if not card_number:
-            raise HTTPException(status_code=400, detail="Invalid QR code format")
+            return {
+                "success": False,
+                "message": "❌ Invalid QR code format",
+                "error": "Could not extract card number from QR data"
+            }
         
         card_result = supabase_admin.table("card_inventory").select("*").eq(
             "card_number", card_number
-        ).eq("gym_owner_email", current_user["email"]).single().execute()
+        ).eq("gym_owner_email", current_user["email"]).execute()
         
         if not card_result.data:
-            return {
+            # Return 404 status but with proper JSON response for frontend handling
+            response = {
                 "success": False,
                 "message": "❌ Card not found in your inventory",
                 "card_number": card_number
             }
+            return response
         
         card = card_result.data[0]
         
-        if card["status"] != CARD_STATUS_AVAILABLE:
+        if card["status"] == CARD_STATUS_ASSIGNED:
+            # Check which member has this card
+            member_result = supabase_admin.table("members").select("full_name, email").eq(
+                "card_id", card_number
+            ).eq("owner_email", current_user["email"]).execute()
+            
+            member_name = "Unknown Member"
+            if member_result.data:
+                member_name = member_result.data[0]["full_name"]
+            
             return {
                 "success": False,
-                "message": f"❌ Card already {card['status']}",
+                "message": f"❌ Card already assigned to {member_name}. Please scan a new card.",
+                "card_number": card_number,
+                "current_status": card["status"],
+                "assigned_member": member_name
+            }
+        elif card["status"] != CARD_STATUS_AVAILABLE:
+            return {
+                "success": False,
+                "message": f"❌ Card status: {card['status']}. Please scan a different card.",
                 "card_number": card_number,
                 "current_status": card["status"]
             }
@@ -263,7 +286,11 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
         
     except Exception as e:
         logger.error(f"QR scan error: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"QR scan failed: {str(e)}")
+        return {
+            "success": False,
+            "message": f"❌ QR scan failed: {str(e)}",
+            "error": str(e)
+        }
 
 @app.get("/api/admin/validate-card/{card_number}")
 async def validate_card_for_assignment(card_number: str, current_user=Depends(get_current_user)):
@@ -899,7 +926,7 @@ async def verify_qr(request: QRVerifyRequest):
 
 @app.post("/api/admin/scan-new-card")
 async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_current_user)):
-    """Auto-activate new cards when first scanned"""
+    """Scan and register new physical cards into inventory"""
     try:
         qr_data = request.qr_data.strip()
         card_number = None
@@ -917,51 +944,65 @@ async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_cur
             card_number = qr_data
         
         if not card_number:
-            raise HTTPException(status_code=400, detail="Invalid QR code format")
+            return {
+                "success": False,
+                "message": "❌ Invalid QR code format",
+                "error": "Could not extract card number from QR data"
+            }
         
-        # Check if card already exists
+        # Check if card already exists in inventory
         existing_card = supabase_admin.table("card_inventory").select("*").eq(
             "card_number", card_number
         ).eq("gym_owner_email", current_user["email"]).execute()
         
         if existing_card.data:
             card = existing_card.data[0]
-            if card["status"] == "assigned":
-                return {
-                    "success": False, 
-                    "message": f"Card {card_number} already assigned",
-                    "card_number": card_number,
-                    "status": card["status"]
-                }
-            else:
-                return {
-                    "success": True, 
-                    "message": f"Card {card_number} available for assignment",
-                    "card_number": card_number,
-                    "status": card["status"]
-                }
+            return {
+                "success": False, 
+                "message": f"❌ Card {card_number} already exists in inventory",
+                "card_number": card_number,
+                "status": card["status"],
+                "created_at": card["created_at"],
+                "card_exists": True
+            }
         else:
-            # Create new card in inventory
+            # Create new card in inventory with available status
             new_card = {
                 "card_number": card_number,
-                "status": "available", 
+                "status": CARD_STATUS_AVAILABLE, 
                 "gym_owner_email": current_user["email"],
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
+                "assigned_to_member_id": None,
+                "assigned_date": None
             }
             
             result = supabase_admin.table("card_inventory").insert(new_card).execute()
             
+            if not result.data:
+                return {
+                    "success": False,
+                    "message": "❌ Failed to add card to inventory",
+                    "error": "Database insertion failed"
+                }
+            
+            logger.info(f"New card {card_number} added to inventory for gym owner {current_user['email']}")
+            
             return {
                 "success": True, 
-                "message": f"New card {card_number} activated and ready for assignment!", 
+                "message": f"✅ Card {card_number} registered in inventory and available for assignment!", 
                 "card_number": card_number,
-                "status": "available",
-                "is_new_card": True
+                "status": CARD_STATUS_AVAILABLE,
+                "is_new_card": True,
+                "created_at": new_card["created_at"]
             }
             
     except Exception as e:
         logger.error(f"Scan new card error: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Failed to scan card: {str(e)}")
+        return {
+            "success": False,
+            "message": f"❌ Failed to register card: {str(e)}",
+            "error": str(e)
+        }
 
 # Member Utility Endpoints
 @app.post("/api/members/{member_id}/reset-password")
