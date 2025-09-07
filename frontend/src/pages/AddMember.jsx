@@ -65,6 +65,18 @@ export default function AddMember() {
         
         if (cardScanResult.data.success) {
           toast.success('Card validated successfully!', { id: 'card-validation' })
+        } else {
+          // Card found but not available (assigned or other status)
+          toast.error(cardScanResult.data.message, { id: 'card-validation' })
+          setQrScanResult({
+            success: false,
+            message: cardScanResult.data.message,
+            error: cardScanResult.data.message,
+            cardId: cardScanResult.data.card_number,
+            assignedMember: cardScanResult.data.assigned_member
+          })
+          setShowQRScanner(false)
+          return
         }
       } catch (error) {
         console.log('Card not found in inventory, trying new card activation...', error)
@@ -77,6 +89,17 @@ export default function AddMember() {
           
           if (cardScanResult.data.success) {
             toast.success('New card activated and ready for assignment!', { id: 'card-validation' })
+          } else {
+            // Card already exists in inventory
+            toast.error(cardScanResult.data.message, { id: 'card-validation' })
+            setQrScanResult({
+              success: false,
+              message: cardScanResult.data.message,
+              error: cardScanResult.data.message,
+              cardId: cardScanResult.data.card_number
+            })
+            setShowQRScanner(false)
+            return
           }
         } catch (newCardError) {
           console.error('Both scan methods failed:', newCardError)
@@ -325,6 +348,36 @@ export default function AddMember() {
                           {qrScanResult.isNewCard && ' (New card activated)'}
                         </p>
                       )}
+                    </div>
+                  )}
+                  {!qrScanResult.success && qrScanResult.assignedMember && (
+                    <div style={{ marginTop: '4px' }}>
+                      <p style={{
+                        color: '#ef4444',
+                        fontSize: '13px',
+                        margin: 0,
+                        fontWeight: '500'
+                      }}>
+                        Currently assigned to: {qrScanResult.assignedMember}
+                      </p>
+                      <p style={{
+                        color: '#a0a0a0',
+                        fontSize: '12px',
+                        margin: 0
+                      }}>
+                        Please scan a different card or use an available card
+                      </p>
+                    </div>
+                  )}
+                  {!qrScanResult.success && qrScanResult.cardId && !qrScanResult.assignedMember && (
+                    <div style={{ marginTop: '4px' }}>
+                      <p style={{
+                        color: '#a0a0a0',
+                        fontSize: '12px',
+                        margin: 0
+                      }}>
+                        Card ID: {qrScanResult.cardId}
+                      </p>
                     </div>
                   )}
                 </div>
