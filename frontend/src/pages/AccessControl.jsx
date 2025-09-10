@@ -1,14 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { QrCode, Clock, CheckCircle, AlertTriangle, ArrowLeft, RefreshCw, User, CreditCard } from 'lucide-react'
+import { QrCode, Clock, CheckCircle, AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react'
 import { QRScanner, QRScanResult } from '../components/QRScanner'
 import qrScannerService from '../services/qrScanner'
-import api from '../services/api'
 import toast from 'react-hot-toast'
 
-export default function Scanner() {
+export default function AccessControl() {
   const nav = useNavigate()
-  const [scanMode, setScanMode] = useState('access') // 'access' or 'registration'
   const [scanResult, setScanResult] = useState(null)
   const [scanHistory, setScanHistory] = useState([])
   const [isScanning, setIsScanning] = useState(true)
@@ -34,7 +32,6 @@ export default function Scanner() {
     const historyItem = {
       id: Date.now(),
       timestamp: new Date().toISOString(),
-      mode: scanMode,
       success: result.success,
       cardId: result.card?.card_id || result.rawData,
       member: result.member?.first_name && result.member?.last_name 
@@ -61,23 +58,8 @@ export default function Scanner() {
     try {
       console.log('Scanner - QR Code detected:', qrData)
       
-      let result
-      
-      if (scanMode === 'access') {
-        // Scan for existing card (access control)
-        result = await qrScannerService.scanCardQR(qrData)
-      } else {
-        // Registration mode - Register new card in inventory
-        try {
-          result = await api.post('/api/admin/scan-new-card', {
-            qr_data: qrData
-          })
-          result = result.data
-        } catch (error) {
-          console.error('Registration scan error:', error)
-          throw new Error(error.response?.data?.detail || 'Failed to register card')
-        }
-      }
+      // Scan for existing card (access control)
+      const result = await qrScannerService.scanCardQR(qrData)
 
       const formattedResult = qrScannerService.formatScanResult(result)
       setScanResult(formattedResult)
@@ -158,73 +140,17 @@ export default function Scanner() {
             gap: '12px'
           }}>
             <QrCode size={32} color="#ff6b35" />
-            QR Code Scanner
+            Gym Access Control
           </h1>
         </div>
         <p style={{ color: '#a0a0a0', fontSize: '16px', margin: 0 }}>
-          Scan QR codes for gym access control and card registration
+          Scan member cards to grant gym access
         </p>
       </div>
 
-      {/* Scanner Controls */}
-      <div style={{ 
-        marginBottom: '24px',
-        display: 'flex',
-        gap: '16px',
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        {/* Scan Mode Toggle */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => {
-              setScanMode('access')
-              resetScanner()
-            }}
-            style={{
-              background: scanMode === 'access' ? '#ff6b35' : '#3a3a3a',
-              border: scanMode === 'access' ? '1px solid #ff6b35' : '1px solid #555',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <User size={14} />
-            Access Control
-          </button>
-          
-          <button
-            onClick={() => {
-              setScanMode('registration')
-              resetScanner()
-            }}
-            style={{
-              background: scanMode === 'registration' ? '#ff6b35' : '#3a3a3a',
-              border: scanMode === 'registration' ? '1px solid #ff6b35' : '1px solid #555',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <CreditCard size={14} />
-            Registration
-          </button>
-        </div>
-
-        {/* Reset Scanner */}
-        {scanResult && (
+      {/* Reset Scanner Button */}
+      {scanResult && (
+        <div style={{ marginBottom: '24px' }}>
           <button
             onClick={resetScanner}
             style={{
@@ -244,8 +170,8 @@ export default function Scanner() {
             <RefreshCw size={14} />
             Scan Again
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div style={{ 
         display: 'grid', 
@@ -265,36 +191,8 @@ export default function Scanner() {
             gap: '8px'
           }}>
             <QrCode size={20} color="#ff6b35" />
-            {scanMode === 'access' ? 'Access Control Scanner' : 'Card Registration Scanner'}
+            Gym Access Control
           </h2>
-
-          {/* Current Scan Mode Info */}
-          <div style={{
-            background: '#2a2a2a',
-            borderRadius: '8px',
-            padding: '12px',
-            marginBottom: '20px',
-            border: '1px solid #404040'
-          }}>
-            <p style={{
-              color: '#ff6b35',
-              fontSize: '14px',
-              fontWeight: '600',
-              margin: '0 0 4px 0'
-            }}>
-              Current Mode: {scanMode === 'access' ? 'Access Control' : 'Card Registration'}
-            </p>
-            <p style={{
-              color: '#a0a0a0',
-              fontSize: '12px',
-              margin: 0
-            }}>
-              {scanMode === 'access' 
-                ? 'Scan member cards to grant gym access'
-                : 'Scan new physical cards to register them in your card inventory'
-              }
-            </p>
-          </div>
 
           {/* Scanner or Result */}
           {!scanResult ? (
@@ -302,7 +200,6 @@ export default function Scanner() {
               onScan={handleScan}
               onError={handleScanError}
               isActive={isScanning}
-              scanMode={scanMode}
             />
           ) : (
             <QRScanResult
@@ -430,7 +327,7 @@ export default function Scanner() {
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        {item.mode === 'access' ? 'Access' : 'Registration'}
+                        Access
                       </span>
                       <span style={{ color: '#a0a0a0', fontSize: '12px' }}>
                         {new Date(item.timestamp).toLocaleTimeString()}

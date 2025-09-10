@@ -11,8 +11,7 @@ import Signup from './pages/Signup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Members from './pages/Members.jsx'
 import AddMember from './pages/AddMember.jsx'
-import QRGenerator from './pages/QRGenerator.jsx'
-import Scanner from './pages/Scanner.jsx'
+import AccessControl from './pages/AccessControl.jsx'
 import AccessLogs from './pages/AccessLogs.jsx'
 import Settings from './pages/Settings.jsx'
 
@@ -32,8 +31,7 @@ export default function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard/></Layout></ProtectedRoute>} />
           <Route path="/members" element={<ProtectedRoute><Layout><Members/></Layout></ProtectedRoute>} />
           <Route path="/add-member" element={<ProtectedRoute><Layout><AddMember/></Layout></ProtectedRoute>} />
-          <Route path="/qr-generator" element={<ProtectedRoute><Layout><QRGenerator/></Layout></ProtectedRoute>} />
-          <Route path="/scanner" element={<ProtectedRoute><Layout><Scanner/></Layout></ProtectedRoute>} />
+          <Route path="/access-control" element={<ProtectedRoute><Layout><AccessControl/></Layout></ProtectedRoute>} />
           <Route path="/access-logs" element={<ProtectedRoute><Layout><AccessLogs/></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings/></Layout></ProtectedRoute>} />
           {/* Catch all route */}

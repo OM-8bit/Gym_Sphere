@@ -201,7 +201,7 @@ const QRScanner = ({
         fontSize: '12px',
         fontWeight: '600'
       }}>
-        {scanMode === 'registration' ? '👤 Registration' : '🚪 Access Control'}
+        🚪 Access Control
       </div>
 
       {/* Scanning Status */}

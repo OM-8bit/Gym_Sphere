@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Dumbbell, Home, Users, UserPlus, QrCode, ScanLine, FileText, Settings, LogOut, Menu, X, Search, Bell, User } from 'lucide-react'
+import { Dumbbell, Home, Users, UserPlus, ScanLine, FileText, Settings, LogOut, Menu, X, Search, Bell, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 // Assets moved to public folder - use public URL
 const logoImage = '/logo_image_dashboard.png'
@@ -62,8 +62,7 @@ export default function Layout({ children }) {
     { to: '/', label: 'Home', icon: Home },
     { to: '/members', label: 'Customers', icon: Users },
     { to: '/add-member', label: 'Add Member', icon: UserPlus },
-    { to: '/qr-generator', label: 'QR Generator', icon: QrCode },
-    { to: '/scanner', label: 'Scanner', icon: ScanLine },
+    { to: '/access-control', label: 'Access Control', icon: ScanLine },
     { to: '/access-logs', label: 'Access Logs', icon: FileText },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]

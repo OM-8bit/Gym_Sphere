@@ -1053,7 +1053,7 @@ async def list_members(current_user=Depends(get_current_user)):
             # Get card details if assigned
             if member.get("card_id"):
                 card_result = supabase_admin.table("card_inventory").select(
-                    "status, created_at as card_created"  # ← FIXED THIS LINE
+                    "status, created_at"
                 ).eq("card_number", member["card_id"]).execute()
                 
                 if card_result.data:

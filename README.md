@@ -1,16 +1,17 @@
-# 🏋️ GymSphere - Complete Gym Management System
+# 🏋️ GymSphere - Professional Gym Management System
 
-Modern gym management platform with member management, QR-based access control, and real-time analytics.
+Modern gym management platform with dedicated access control, member management, and card inventory integration.
 
 ## ✨ Features
 
-- 🔐 **Authentication** - Secure login/registration with Supabase Auth
-- 👥 **Member Management** - Add, edit, delete gym members
-- 📱 **QR Code Access** - Generate QR codes for gym entry
-- 🔍 **Access Scanner** - Verify member access via QR/Card
-- 📊 **Dashboard Analytics** - Member stats and insights
-- 🎫 **Card System** - Physical card-based access control
-- 📋 **Access Logs** - Track all gym entries and exits
+- 🔐 **Authentication** - Secure login/registration with JWT tokens
+- 👥 **Member Management** - Professional member registration and management
+- � **Access Control** - Dedicated gym entry validation system
+- 🎫 **Card Integration** - Works with external QR generation applications
+- 📊 **Dashboard Analytics** - Real-time member and card statistics
+- 📋 **Access Logs** - Comprehensive tracking of gym entries
+- � **Responsive Design** - Mobile, tablet, and desktop optimized
+- 🔧 **Professional Interface** - Clean, gym-focused user experience
 
 ## 🚀 Quick Start
 
@@ -68,12 +69,43 @@ text
 
 ## 📁 Project Structure
 
-gymsphere/
-├── backend/ # FastAPI backend
-├── frontend/ # React frontend
-├── docs/ # Documentation
+```
+gym_sphere/
+├── frontend/                   # React Application
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   ├── pages/            # Page components (Dashboard, Members, AccessControl, etc.)
+│   │   ├── context/          # Authentication context
+│   │   ├── services/         # API integration services
+│   │   └── styles/           # CSS styling
+│   ├── public/               # Static assets
+│   └── package.json
+├── backend/                    # FastAPI Backend
+│   ├── main.py              # API endpoints and database integration
+│   ├── requirements.txt     # Python dependencies
+│   └── Dockerfile
+└── docker/                   # Container orchestration
+    └── docker-compose.yml
+```
 
-text
+## 📊 Latest Updates
+
+### September 11, 2025 - Access Control System Enhancement
+- ✅ **Removed QR Generator Page** - Separated concerns for external QR generation
+- ✅ **Renamed Scanner → AccessControl** - Professional gym-focused interface
+- ✅ **Fixed SQL Query Bug** - Resolved `created_atascard_created` column issue
+- ✅ **Professional Branding** - Updated all references for gym management focus
+- ✅ **External QR Integration** - System works with external QR generation apps
+- ✅ **Improved Navigation** - Cleaner sidebar and routing structure
+- ✅ **Backend Stability** - SQL fixes and container restart capability
+
+### Previous Updates
+- Member management system implementation
+- Real-time dashboard analytics
+- Supabase PostgreSQL integration
+- Docker containerization
+- Responsive mobile design
+- Authentication system with JWT tokens
 
 ## 🔧 Environment Setup
 

@@ -16,7 +16,7 @@ export default function AddMember() {
     e.preventDefault()
     setLoading(true)
     try {
-      // Workflow 1: Step 4 - Create member with validated card
+      // Create member with validated card from card inventory
       // Map frontend form fields to backend expected fields
       const memberData = {
         full_name: form.full_name,
@@ -52,90 +52,63 @@ export default function AddMember() {
     try {
       console.log('QR Code scanned:', qrData)
       
-      // Workflow 1: Member Registration with QR
-      // Step 1: Validate scanned card with backend
+      // Since QR codes are now automatically stored in card_inventory when generated,
+      // we only need to validate if the scanned card exists and is available
       toast.loading('Validating card...', { id: 'card-validation' })
       
-      let cardScanResult
-      try {
-        // Try existing card validation first
-        cardScanResult = await api.post('/api/admin/scan-card-qr', {
-          qr_data: qrData
-        })
-        
-        if (cardScanResult.data.success) {
-          toast.success('Card validated successfully!', { id: 'card-validation' })
-        } else {
-          // Card found but not available (assigned or other status)
-          toast.error(cardScanResult.data.message, { id: 'card-validation' })
-          setQrScanResult({
-            success: false,
-            message: cardScanResult.data.message,
-            error: cardScanResult.data.message,
-            cardId: cardScanResult.data.card_number,
-            assignedMember: cardScanResult.data.assigned_member
-          })
-          setShowQRScanner(false)
-          return
-        }
-      } catch (error) {
-        console.log('Card not found in inventory, trying new card activation...', error)
-        
-        // If card doesn't exist, try new card activation
-        try {
-          cardScanResult = await api.post('/api/admin/scan-new-card', {
-            qr_data: qrData
-          })
-          
-          if (cardScanResult.data.success) {
-            toast.success('New card activated and ready for assignment!', { id: 'card-validation' })
-          } else {
-            // Card already exists in inventory
-            toast.error(cardScanResult.data.message, { id: 'card-validation' })
-            setQrScanResult({
-              success: false,
-              message: cardScanResult.data.message,
-              error: cardScanResult.data.message,
-              cardId: cardScanResult.data.card_number
-            })
-            setShowQRScanner(false)
-            return
-          }
-        } catch (newCardError) {
-          console.error('Both scan methods failed:', newCardError)
-          toast.error('Failed to validate or activate card', { id: 'card-validation' })
-          throw new Error(`Card validation failed: ${newCardError.response?.data?.detail || newCardError.message}`)
-        }
-      }
-
-      // Extract card ID from backend response
-      const cardId = cardScanResult.data.card_number || cardScanResult.data.cardId
-      
-      if (!cardId) {
-        throw new Error('No card ID returned from backend')
-      }
-
-      // Update form with validated card ID
-      setForm(prev => ({ ...prev, card_id: cardId }))
-      setQrScanResult({
-        success: true,
-        message: cardScanResult.data.message || 'Card validated successfully!',
-        cardId: cardId,
-        status: cardScanResult.data.status,
-        isNewCard: cardScanResult.data.is_new_card || false
+      const cardScanResult = await api.post('/api/admin/scan-card-qr', {
+        qr_data: qrData
       })
       
-      toast.success(`Card "${cardId}" ready for member assignment!`)
-      setShowQRScanner(false)
+      if (cardScanResult.data.success) {
+        // Card exists and is available for assignment
+        const cardId = cardScanResult.data.card_number || cardScanResult.data.cardId
+        
+        if (!cardId) {
+          throw new Error('No card ID returned from backend')
+        }
+
+        // Update form with validated card ID
+        setForm(prev => ({ ...prev, card_id: cardId }))
+        setQrScanResult({
+          success: true,
+          message: cardScanResult.data.message || 'Card validated successfully!',
+          cardId: cardId,
+          status: cardScanResult.data.status
+        })
+        
+        toast.success(`Card "${cardId}" ready for member assignment!`, { id: 'card-validation' })
+        setShowQRScanner(false)
+        
+      } else {
+        // Card found but not available (assigned or other status)
+        toast.error(cardScanResult.data.message, { id: 'card-validation' })
+        setQrScanResult({
+          success: false,
+          message: cardScanResult.data.message,
+          error: cardScanResult.data.message,
+          cardId: cardScanResult.data.card_number,
+          assignedMember: cardScanResult.data.assigned_member
+        })
+        setShowQRScanner(false)
+      }
       
     } catch (error) {
       console.error('QR Scan Error:', error)
+      
+      // If card is not found in inventory, show appropriate error
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          'Card not found in inventory. Please ensure the QR code was generated through the system.'
+      
       setQrScanResult({
         success: false,
-        message: error.message || 'Failed to scan QR code',
-        error: error.message
+        message: errorMessage,
+        error: errorMessage
       })
-      toast.error(error.message || 'Failed to scan QR code')
+      
+      toast.error(errorMessage, { id: 'card-validation' })
+      setShowQRScanner(false)
     }
   }
 
