@@ -1,13 +1,37 @@
-﻿fastapi==0.104.1
-uvicorn[standard]==0.24.0
-supabase==2.18.1
-pydantic[email]==2.11.3
-pydantic-settings==2.4.0
-python-dotenv==1.0.0
-httpx[http2]==0.27.2
-PyJWT==2.10.1
-websockets==13.1
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
-python-multipart==0.0.9
-qrcode[pil]==7.4.2
+﻿# Core FastAPI Framework
+fastapi>=0.110.0
+uvicorn>=0.18.0
+
+# Environment & Configuration  
+python-dotenv>=1.0.0
+
+# Database & Authentication
+supabase>=2.6.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# HTTP/2 Support (CRITICAL - fixes Supabase http2 error)
+httpx[http2]>=0.24.0
+
+# Session Management & Templating
+jinja2>=3.1.2
+itsdangerous>=2.1.2
+starlette>=0.27.0
+
+# Form Handling & File Processing
+python-multipart>=0.0.6
+
+# QR Code Generation & Image Processing
+qrcode[pil]>=7.4.2
+pillow>=10.0.0
+
+# Data Validation & Serialization
+pydantic>=2.1.1
+pydantic[email]>=2.1.1
+
+# Async File Operations
+aiofiles>=23.1.0
+
+# Date & Time Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
