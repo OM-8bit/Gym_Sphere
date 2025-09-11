@@ -555,7 +555,7 @@ async def update_card_status(
 
 @app.post("/api/admin/scan-card-qr")
 async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_current_user)):
-    """Enhanced QR card scanning with better parsing and validation"""
+    """Enhanced QR card scanning with case-insensitive matching"""
     try:
         qr_data = request.qr_data.strip()
         card_number = None
@@ -572,7 +572,7 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
         elif qr_data.isalnum():
             card_number = qr_data
         else:
-            # Try to extract alphanumeric card number
+            # Use raw string to fix SyntaxWarning
             import re
             match = re.search(r'[A-Z]{2,4}\d{3,4}', qr_data.upper())
             if match:
@@ -583,22 +583,50 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
                 "success": False,
                 "message": "❌ Invalid QR code format",
                 "error": "Could not extract card number from QR data",
-                "qr_data_received": qr_data[:50]  # Show first 50 chars for debugging
+                "qr_data_received": qr_data[:50]
             }
         
-        card_number = card_number.upper()
+        # 🔧 NORMALIZE CASE - This is the key fix
+        card_number = card_number.upper().strip()
+        user_email = current_user["email"].lower().strip()
         
-        # Check if card exists in inventory
-        card_result = supabase_admin.table("card_inventory").select("*").eq(
-            "card_number", card_number
-        ).eq("gym_owner_email", current_user["email"]).execute()
+        # 🔍 DEBUG LOGGING (temporary - remove after testing)
+        print(f"🔍 DEBUG: Searching for card: '{card_number}'")
+        print(f"🔍 DEBUG: User email: '{user_email}'")
+        
+        # 🚀 FIX: Use wildcards with ilike for pattern matching
+        card_result = supabase_admin.table("card_inventory").select("*").ilike(
+            "card_number", f"*{card_number}*"
+        ).ilike("gym_owner_email", f"*{user_email}*").execute()
+        
+        # 🔍 DEBUG: Check if card exists anywhere (remove after testing)
+        debug_result = supabase_admin.table("card_inventory").select("*").ilike(
+            "card_number", f"*{card_number}*"
+        ).execute()
+        
+        print(f"🔍 DEBUG: Cards found anywhere: {len(debug_result.data or [])}")
+        print(f"🔍 DEBUG: Cards for this user: {len(card_result.data or [])}")
+        
+        # 🔍 ADDITIONAL DEBUG: Show the actual stored email
+        if debug_result.data:
+            stored_email = debug_result.data[0].get("gym_owner_email", "No email found")
+            print(f"🔍 DEBUG: Card owner email in DB: '{stored_email}'")
+            print(f"🔍 DEBUG: Your email: '{user_email}'")
+            print(f"🔍 DEBUG: Emails match: {stored_email.lower() == user_email.lower()}")
         
         if not card_result.data:
+            # Provide better error message with debug info
             return {
                 "success": False,
                 "message": f"❌ Card {card_number} not found in your inventory",
                 "card_number": card_number,
-                "suggestion": "Add this card to inventory first using 'Add Card Batch' or scan it as a new card"
+                "debug_info": {
+                    "searched_card": card_number,
+                    "user_email": user_email,
+                    "card_exists_anywhere": len(debug_result.data or []) > 0,
+                    "card_owner_email": debug_result.data[0]["gym_owner_email"] if debug_result.data else None
+                },
+                "suggestion": "Check if card belongs to your account or add it to inventory first"
             }
         
         card = card_result.data[0]
@@ -607,7 +635,7 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
             # Get member details
             member_result = supabase_admin.table("members").select("full_name, email").eq(
                 "card_id", card_number
-            ).eq("owner_email", current_user["email"]).execute()
+            ).eq("owner_email", user_email).execute()
             
             member_name = "Unknown Member"
             if member_result.data:
@@ -648,6 +676,7 @@ async def scan_card_qr(request: QRCardScanRequest, current_user=Depends(get_curr
             "message": f"❌ QR scan failed: {str(e)}",
             "error": str(e)
         }
+
 
 @app.post("/api/admin/scan-new-card")
 async def scan_new_card(request: QRCardScanRequest, current_user=Depends(get_current_user)):
