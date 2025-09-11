@@ -123,8 +123,12 @@ class QRVerifyRequest(BaseModel):
 
 class MemberUpdate(BaseModel):
     full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
     phone: Optional[str] = None
     membership_type: Optional[str] = None
+    subscription_start: Optional[str] = None
+    subscription_end: Optional[str] = None
+    card_id: Optional[str] = None
     is_active: Optional[bool] = None
 
 class QRCardScanRequest(BaseModel):
@@ -1144,8 +1148,12 @@ async def update_member(member_id: int, member_update: MemberUpdate, current_use
 
         update_data = {k: v for k, v in member_update.dict().items() if v is not None}
         
+        # Remove fields that shouldn't be updated
+        update_data.pop('owner_email', None)
+        update_data.pop('created_at', None)
+        update_data.pop('id', None)
+        
         if update_data:
-            update_data["updated_at"] = datetime.now().isoformat()
             result = supabase_admin.table("members").update(update_data).eq("id", member_id).execute()
             return {
                 "message": "✅ Member updated successfully", 

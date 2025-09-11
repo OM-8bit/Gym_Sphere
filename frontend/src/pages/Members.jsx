@@ -2,19 +2,49 @@
 import api from '../services/api.js'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
-import { Plus, Trash2, Search, Filter } from 'lucide-react'
+import { Plus, Trash2, Search, Filter, Edit, ChevronDown } from 'lucide-react'
+import MemberEditModal from '../components/MemberEditModal.jsx'
 
 export default function Members() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('All')
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [editingMember, setEditingMember] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  // Function to calculate member status based on end date
+  const calculateMemberStatus = (member) => {
+    const today = new Date()
+    const endDate = member.subscription_end || member.end_date
+    
+    if (!endDate) return 'Active'
+    
+    try {
+      const memberEndDate = new Date(endDate)
+      const diffTime = memberEndDate.getTime() - today.getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays < 0) return 'Expired'
+      if (diffDays <= 7) return 'Near Expiry'
+      return 'Active'
+    } catch {
+      return 'Active' // Default to active if date parsing fails
+    }
+  }
 
   const load = async () => {
     try {
       const { data } = await api.get('/api/members')
       // Backend returns {members: [...], count: number}, so extract the members array
       const membersArray = data.members || []
-      setRows(Array.isArray(membersArray) ? membersArray : [])
+      // Calculate status for each member
+      const membersWithStatus = membersArray.map(member => ({
+        ...member,
+        status: calculateMemberStatus(member)
+      }))
+      setRows(Array.isArray(membersWithStatus) ? membersWithStatus : [])
     } catch { 
       toast.error('Failed to load members')
       setRows([]) // Set to empty array on error
@@ -23,6 +53,18 @@ export default function Members() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && !event.target.closest('.filter-dropdown')) {
+        setShowFilterDropdown(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showFilterDropdown])
 
   const remove = async (id) => {
     if (!confirm('Delete this member?')) return
@@ -34,11 +76,66 @@ export default function Members() {
     } catch { toast.error('Delete failed') }
   }
 
+  // Function to handle member edit
+  const handleEdit = (member) => {
+    setEditingMember(member)
+    setShowEditModal(true)
+  }
+
+  // Function to handle member update
+  const handleMemberUpdate = (updatedMember) => {
+    const updatedMemberWithStatus = {
+      ...updatedMember,
+      status: calculateMemberStatus(updatedMember)
+    }
+    setRows(prevRows => 
+      prevRows.map(member => 
+        member.id === updatedMemberWithStatus.id ? updatedMemberWithStatus : member
+      )
+    )
+  }
+
+  // Function to get status badge style
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
+      case 'Active':
+        return {
+          background: '#10b98120',
+          color: '#10b981',
+          border: '1px solid #10b98130'
+        }
+      case 'Near Expiry':
+        return {
+          background: '#f59e0b20',
+          color: '#f59e0b',
+          border: '1px solid #f59e0b30'
+        }
+      case 'Expired':
+        return {
+          background: '#ef444420',
+          color: '#ef4444',
+          border: '1px solid #ef444430'
+        }
+      default:
+        return {
+          background: '#64748b20',
+          color: '#64748b',
+          border: '1px solid #64748b30'
+        }
+    }
+  }
+
   // Ensure rows is an array before filtering
-  const filteredRows = Array.isArray(rows) ? rows.filter(member =>
-    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : []
+  const filteredRows = Array.isArray(rows) ? rows.filter(member => {
+    // Filter by search term
+    const matchesSearch = member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         member.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Filter by status
+    const matchesFilter = filterStatus === 'All' || member.status === filterStatus
+    
+    return matchesSearch && matchesFilter
+  }) : []
 
   return (
     <div style={{ maxWidth: '1400px' }}>
@@ -102,13 +199,94 @@ export default function Members() {
             }}
           />
         </div>
-        <button className="btn btn-secondary" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px' 
-        }}>
-          <Filter size={16} /> Filter
-        </button>
+        {/* Filter Dropdown */}
+        <div className="filter-dropdown" style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '12px 16px',
+              background: '#ff6b35',
+              border: 'none',
+              borderRadius: '10px',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.background = '#e55a2b'}
+            onMouseLeave={(e) => e.target.style.background = '#ff6b35'}
+          >
+            <Filter size={16} /> 
+            {filterStatus === 'All' ? 'Filter' : filterStatus}
+            <ChevronDown size={14} style={{
+              transform: showFilterDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s'
+            }} />
+          </button>
+          
+          {showFilterDropdown && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              marginTop: '8px',
+              background: '#2d2d2d',
+              border: '1px solid #404040',
+              borderRadius: '10px',
+              minWidth: '180px',
+              zIndex: 1000,
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+            }}>
+              {['All', 'Active', 'Near Expiry', 'Expired'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setFilterStatus(status)
+                    setShowFilterDropdown(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: filterStatus === status ? '#ff6b3520' : 'transparent',
+                    border: 'none',
+                    borderRadius: status === 'All' ? '10px 10px 0 0' : 
+                              status === 'Expired' ? '0 0 10px 10px' : '0',
+                    color: filterStatus === status ? '#ff6b35' : '#ffffff',
+                    fontSize: '14px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (filterStatus !== status) {
+                      e.target.style.background = '#404040'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (filterStatus !== status) {
+                      e.target.style.background = 'transparent'
+                    }
+                  }}
+                >
+                  {status}
+                  {status !== 'All' && (
+                    <span style={{
+                      float: 'right',
+                      color: '#a0a0a0',
+                      fontSize: '12px'
+                    }}>
+                      {rows.filter(m => m.status === status).length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Members Table */}
@@ -185,25 +363,81 @@ export default function Members() {
                       </span>
                     </td>
                     <td>
-                      {m.is_active ? 
-                        <span className="badge badge-ok">Active</span> : 
-                        <span className="badge badge-bad">Inactive</span>
-                      }
+                      <span style={{
+                        ...getStatusBadgeStyle(m.status),
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        textTransform: 'capitalize'
+                      }}>
+                        {m.status}
+                      </span>
                     </td>
                     <td style={{ color: '#a0a0a0' }}>
                       {m.subscription_end ? new Date(m.subscription_end).toLocaleDateString() : '-'}
                     </td>
                     <td>
-                      <button 
-                        className="btn btn-danger" 
-                        onClick={() => remove(m.id)}
-                        style={{ 
-                          padding: '8px 12px',
-                          fontSize: '12px'
-                        }}
-                      >
-                        <Trash2 size={14}/> Delete
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button 
+                          onClick={() => handleEdit(m)}
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            color: '#10b981',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                          title="Edit member"
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(16, 185, 129, 0.2)'
+                            e.target.style.borderColor = 'rgba(16, 185, 129, 0.5)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(16, 185, 129, 0.1)'
+                            e.target.style.borderColor = 'rgba(16, 185, 129, 0.3)'
+                          }}
+                        >
+                          <Edit size={14} />
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => remove(m.id)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}
+                          title="Delete member"
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(239, 68, 68, 0.2)'
+                            e.target.style.borderColor = 'rgba(239, 68, 68, 0.5)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(239, 68, 68, 0.1)'
+                            e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -300,22 +534,40 @@ export default function Members() {
                     </span>
                     
                     {/* Status badge */}
-                    {m.is_active ? 
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#4ade80',
+                    <span style={{
+                      ...getStatusBadgeStyle(m.status),
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      fontSize: '10px',
+                      fontWeight: '500',
+                      textTransform: 'capitalize',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {m.status}
+                    </span>
+                    
+                    {/* Edit button */}
+                    <button 
+                      onClick={() => handleEdit(m)}
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10b981',
+                        border: 'none',
+                        padding: '6px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
                         flexShrink: '0'
-                      }} title="Active"></div> : 
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#ef4444',
-                        flexShrink: '0'
-                      }} title="Inactive"></div>
-                    }
+                      }}
+                      title="Edit member"
+                    >
+                      <Edit size={14} />
+                    </button>
                     
                     {/* Delete button */}
                     <button 
@@ -417,6 +669,17 @@ export default function Members() {
           </div>
         </div>
       )}
+
+      {/* Member Edit Modal */}
+      <MemberEditModal
+        isOpen={showEditModal}
+        member={editingMember}
+        onClose={() => {
+          setShowEditModal(false)
+          setEditingMember(null)
+        }}
+        onUpdate={handleMemberUpdate}
+      />
     </div>
   )
 }
