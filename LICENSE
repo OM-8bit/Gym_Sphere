@@ -1,13 +1,14 @@
 Copyright (c) 2025 Metamotives
 
-All rights reserved.
+All rights reserved except as granted below.
 
 This repository and its contents (including but not limited to code, design, documentation, and ideas) are the intellectual property of the copyright holder.
 
-You are NOT permitted to:
-- Use, copy, modify, merge, publish, distribute, sublicense, or sell copies of this repository or any derivative works,
-- Or use the ideas, concepts, or designs contained within this repository,
+Authorized contributors (explicitly approved by the copyright holder) are granted limited permission to:
+- Use, modify, fork, and contribute to this repository for development purposes.
 
-WITHOUT prior written permission from the copyright holder.
+Non-contributors (anyone who is not explicitly authorized) are NOT permitted to:
+- Use, copy, modify, fork, merge, publish, distribute, sublicense, or sell copies of this repository or any derivative works,
+- Or use the ideas, concepts, or designs contained within this repository.
 
 Any unauthorized use of this repository, its code, or its ideas is strictly prohibited and may result in legal action.
