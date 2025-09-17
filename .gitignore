@@ -55,6 +55,8 @@ PROJECT_CONTEXT.md
 backend/BACKEND_CONTEXT.md
 frontend/FRONTEND_CONTEXT.md
 ADMIN_CONTEXT.md
+MEMBER_SIDE_CONTEXT.md
+ADMIN_SIDE_CONTEXT.md
 *.pyd
 
 # Large asset files (keep in public folder but don't commit)
