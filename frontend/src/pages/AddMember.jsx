@@ -203,9 +203,13 @@ export default function AddMember() {
               </label>
               <input 
                 className="input" 
+                type="tel"
                 value={form.phone} 
                 onChange={set('phone')} 
                 placeholder="Enter phone number"
+                minLength="10"
+                maxLength="15"
+                pattern="[0-9]*"
               />
             </div>
 

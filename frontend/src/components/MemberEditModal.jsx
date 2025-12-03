@@ -255,6 +255,9 @@ const MemberEditModal = ({ isOpen, member, onClose, onUpdate }) => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
+                minLength="10"
+                maxLength="15"
+                pattern="[0-9]*"
                 style={{
                   width: '100%',
                   padding: '12px 16px',

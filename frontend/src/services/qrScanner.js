@@ -2,18 +2,51 @@ import api from './api'
 
 class QRScannerService {
   /**
-   * Scan QR code for existing card (access control)
+   * Scan QR code for gym access control (verify member access)
    * @param {string} qrData - The QR code data
    * @returns {Promise} API response
    */
   async scanCardQR(qrData) {
+    try {
+      // Parse QR data to extract card number
+      let cardNumber = qrData.trim()
+      
+      // Enhanced QR data parsing
+      if (qrData.toLowerCase().includes('gymsphere:')) {
+        cardNumber = qrData.split(':').pop()
+      } else if (qrData.includes(':')) {
+        const parts = qrData.split(':')
+        if (parts.length >= 2) {
+          cardNumber = parts[parts.length - 1]
+        }
+      } else if (qrData.includes('/')) {
+        cardNumber = qrData.split('/').pop()
+      }
+      
+      // Call card verify endpoint for gym access
+      const response = await api.post('/api/card/verify', {
+        card_number: cardNumber
+      })
+      return response.data
+    } catch (error) {
+      console.error('QR Scan Error:', error)
+      throw this.handleError(error)
+    }
+  }
+
+  /**
+   * Scan QR code for card assignment during member registration
+   * @param {string} qrData - The QR code data
+   * @returns {Promise} API response
+   */
+  async scanCardForAssignment(qrData) {
     try {
       const response = await api.post('/api/admin/scan-card-qr', {
         qr_data: qrData
       })
       return response.data
     } catch (error) {
-      console.error('QR Scan Error:', error)
+      console.error('Card Assignment Scan Error:', error)
       throw this.handleError(error)
     }
   }
@@ -183,17 +216,13 @@ class QRScannerService {
       
       switch (status) {
         case 400:
-          // Check for specific error messages
-          if (data.detail && data.detail.includes('not found in your inventory')) {
-            return new Error('This card is not registered in your gym inventory. Please add it first or use a different card.')
-          }
-          return new Error(data.detail || 'Invalid QR code data')
+          return new Error(data.detail || data.message || 'Invalid card or member not found')
         case 401:
           return new Error('Authentication required. Please log in again.')
         case 403:
           return new Error('Access denied. Insufficient permissions.')
         case 404:
-          return new Error('Card not found in your gym inventory. Please verify the QR code.')
+          return new Error('Card not found. Please verify the QR code.')
         case 409:
           return new Error(data.detail || 'Conflict: Card already registered')
         case 422:
@@ -201,7 +230,7 @@ class QRScannerService {
         case 500:
           return new Error('Server error. Please try again later.')
         default:
-          return new Error(data.detail || `Server error (${status})`)
+          return new Error(data.detail || data.message || `Server error (${status})`)
       }
     } else if (error.request) {
       // Network error
@@ -232,6 +261,40 @@ class QRScannerService {
    * @returns {Object} Formatted result for components
    */
   formatScanResult(scanResult) {
+    // Handle /api/card/verify response format
+    if ('access_granted' in scanResult) {
+      const member = scanResult.member || {
+        name: scanResult.member_name || 'Unknown',
+        full_name: scanResult.member_name || 'Unknown',
+        membership_type: scanResult.membership_type || null,
+        subscription_end: scanResult.subscription_end || null
+      }
+      
+      // Ensure member.name is set (for display in recent scans)
+      if (!member.name && member.full_name) {
+        member.name = member.full_name
+      }
+      
+      const formattedResult = {
+        success: scanResult.access_granted,
+        message: scanResult.message || (scanResult.access_granted ? 'Access Granted' : 'Access Denied'),
+        member: member,
+        card: {
+          card_id: scanResult.member?.card_id || scanResult.card_number || null,
+          is_active: scanResult.member?.is_active // Pass member's active status to card
+        },
+        accessLog: null,
+        rawData: null,
+        timestamp: scanResult.timestamp || new Date().toISOString()
+      }
+      
+      // Pass result object to card for status determination
+      formattedResult.result = formattedResult
+      
+      return formattedResult
+    }
+    
+    // Fallback to original format
     return {
       success: scanResult.success || false,
       message: scanResult.message || 'QR code processed',

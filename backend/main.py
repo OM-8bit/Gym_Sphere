@@ -1356,16 +1356,17 @@ async def scan_qr_card(card_number: str, current_user=Depends(get_current_user))
         # Log access attempt
         log_data = {
             "member_id": member["id"],
-            "access_type": "card_scan",
+            "access_type": "card",
             "access_granted": is_active,
             "card_number": card_number,
             "timestamp": datetime.now().isoformat(),
-            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive")
+            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive"),
+            "owner_email": member.get("owner_email")
         }
         try:
             supabase_admin.table("access_logs").insert(log_data).execute()
-        except:
-            logger.warning(f"Failed to log access attempt for card {card_number}")
+        except Exception as log_error:
+            logger.error(f"Failed to log access attempt for card {card_number}: {str(log_error)}")
         
         return {
             "member_name": member["full_name"],
@@ -1394,19 +1395,20 @@ async def verify_card(request: CardVerifyRequest):
         ).execute()
         
         if not member_result.data:
-            # Log failed access attempt
+            # Log failed access attempt (no owner since card is unknown)
             log_data = {
                 "member_id": None,
-                "access_type": "card_verify",
+                "access_type": "card",
                 "access_granted": False,
                 "card_number": card_number,
                 "timestamp": datetime.now().isoformat(),
-                "failure_reason": "Invalid card number"
+                "failure_reason": "Invalid card number",
+                "owner_email": None
             }
             try:
                 supabase_admin.table("access_logs").insert(log_data).execute()
-            except:
-                pass
+            except Exception as log_error:
+                logger.error(f"Failed to log access attempt: {str(log_error)}")
             
             return {
                 "access_granted": False,
@@ -1425,16 +1427,17 @@ async def verify_card(request: CardVerifyRequest):
         # Log access attempt
         log_data = {
             "member_id": member["id"],
-            "access_type": "card_verify",
+            "access_type": "card",
             "access_granted": is_active,
             "card_number": card_number,
             "timestamp": datetime.now().isoformat(),
-            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive")
+            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive"),
+            "owner_email": member.get("owner_email")
         }
         try:
             supabase_admin.table("access_logs").insert(log_data).execute()
-        except:
-            pass
+        except Exception as log_error:
+            logger.error(f"Failed to log access attempt: {str(log_error)}")
         
         if is_active:
             return {
@@ -1443,6 +1446,16 @@ async def verify_card(request: CardVerifyRequest):
                 "member_name": member["full_name"],
                 "membership_type": member["membership_type"],
                 "subscription_end": member["subscription_end"],
+                "member": {
+                    "id": member["id"],
+                    "full_name": member["full_name"],
+                    "email": member.get("email"),
+                    "phone": member.get("phone"),
+                    "membership_type": member["membership_type"],
+                    "subscription_end": member["subscription_end"],
+                    "card_id": member.get("card_id"),
+                    "is_active": True
+                },
                 "timestamp": datetime.now().isoformat()
             }
         else:
@@ -1452,6 +1465,16 @@ async def verify_card(request: CardVerifyRequest):
                 "message": failure_message,
                 "member_name": member["full_name"],
                 "subscription_end": member["subscription_end"],
+                "member": {
+                    "id": member["id"],
+                    "full_name": member["full_name"],
+                    "email": member.get("email"),
+                    "phone": member.get("phone"),
+                    "membership_type": member["membership_type"],
+                    "subscription_end": member["subscription_end"],
+                    "card_id": member.get("card_id"),
+                    "is_active": False
+                },
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -1461,16 +1484,17 @@ async def verify_card(request: CardVerifyRequest):
         # Log system error
         error_log = {
             "member_id": None,
-            "access_type": "card_verify",
+            "access_type": "card",
             "access_granted": False,
             "card_number": request.card_number,
             "timestamp": datetime.now().isoformat(),
-            "failure_reason": "System error"
+            "failure_reason": "System error",
+            "owner_email": None
         }
         try:
             supabase_admin.table("access_logs").insert(error_log).execute()
-        except:
-            pass
+        except Exception as log_error:
+            logger.error(f"Failed to log system error: {str(log_error)}")
             
         return {
             "access_granted": False,
@@ -1554,15 +1578,16 @@ async def verify_qr(request: QRVerifyRequest):
         # Log access attempt
         log_data = {
             "member_id": member["id"],
-            "access_type": "qr_verify",
+            "access_type": "qr",
             "access_granted": is_active,
             "timestamp": datetime.now().isoformat(),
-            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive")
+            "failure_reason": None if is_active else ("Subscription expired" if not is_subscription_valid else "Member inactive"),
+            "owner_email": member.get("owner_email")
         }
         try:
             supabase_admin.table("access_logs").insert(log_data).execute()
-        except:
-            pass
+        except Exception as log_error:
+            logger.error(f"Failed to log QR access attempt: {str(log_error)}")
 
         if is_active:
             return {
@@ -1730,48 +1755,133 @@ async def dashboard_stats(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Failed to fetch dashboard stats")
 
 @app.get("/api/access/logs")
-async def get_access_logs(limit: int = 50, current_user=Depends(get_current_user)):
-    """Get recent access logs with member information"""
+async def get_access_logs(limit: int = 1000, current_user=Depends(get_current_user)):
+    """Get all access logs grouped by month and date with member information"""
     try:
-        # Get access logs with member information
-        logs_result = supabase_admin.table("access_logs").select("*").order(
-            "timestamp", desc=True
-        ).limit(limit).execute()
+        user_email = current_user["email"]
         
+        # Get all access logs for this gym owner using owner_email filter
+        logs_result = supabase_admin.table("access_logs").select("*").eq(
+            "owner_email", user_email
+        ).order("timestamp", desc=True).limit(limit).execute()
+        
+        # Get all members for this gym owner for member info lookup
+        members_result = supabase_admin.table("members").select("id, full_name, email, card_id, membership_type").eq(
+            "owner_email", user_email
+        ).execute()
+        
+        # Create a map of member_id to member info
+        member_map = {m["id"]: m for m in (members_result.data or [])}
+        
+        # Transform logs
         logs = []
         for log in logs_result.data or []:
-            # Get member info if member_id exists
-            if log.get("member_id"):
-                member_result = supabase_admin.table("members").select(
-                    "full_name, email, card_id, membership_type"
-                ).eq("id", log["member_id"]).eq("owner_email", current_user["email"]).execute()
-                
-                if member_result.data:
-                    member = member_result.data[0]
-                    transformed_log = {
-                        "timestamp": log.get("timestamp"),
-                        "member_name": member.get("full_name"),
-                        "member_email": member.get("email"),
-                        "card_number": member.get("card_id"),
-                        "membership_type": member.get("membership_type"),
-                        "access_granted": log.get("access_granted", False),
-                        "access_type": log.get("access_type", "unknown"),
-                        "failure_reason": log.get("failure_reason")
-                    }
-                    logs.append(transformed_log)
-            else:
-                # Anonymous access attempt
+            member_id = log.get("member_id")
+            
+            if member_id and member_id in member_map:
+                member = member_map[member_id]
                 transformed_log = {
+                    "id": log.get("id"),
                     "timestamp": log.get("timestamp"),
-                    "member_name": "Unknown",
-                    "card_number": log.get("card_number"),
+                    "member_id": member_id,
+                    "member_name": member.get("full_name"),
+                    "member_email": member.get("email"),
+                    "card_number": log.get("card_number") or member.get("card_id"),
+                    "membership_type": member.get("membership_type"),
                     "access_granted": log.get("access_granted", False),
-                    "access_type": log.get("access_type", "unknown"),
+                    "access_type": log.get("access_type", "card"),
                     "failure_reason": log.get("failure_reason")
                 }
                 logs.append(transformed_log)
+            else:
+                # Include failed attempts (unknown cards or missing member data)
+                transformed_log = {
+                    "id": log.get("id"),
+                    "timestamp": log.get("timestamp"),
+                    "member_id": member_id,
+                    "member_name": "Unknown",
+                    "card_number": log.get("card_number"),
+                    "access_granted": log.get("access_granted", False),
+                    "access_type": log.get("access_type", "card"),
+                    "failure_reason": log.get("failure_reason", "Card not found")
+                }
+                logs.append(transformed_log)
         
-        return {"logs": logs, "count": len(logs)}
+        # Group logs by month and date
+        grouped_data = {}
+        
+        for log in logs:
+            if not log.get("timestamp"):
+                continue
+                
+            # Parse timestamp
+            log_date = datetime.fromisoformat(log["timestamp"].replace("Z", "+00:00"))
+            
+            # Get month key (YYYY-MM)
+            month_key = log_date.strftime("%Y-%m")
+            month_name = log_date.strftime("%B %Y")  # "January 2025"
+            
+            # Get date key (YYYY-MM-DD)
+            date_key = log_date.strftime("%Y-%m-%d")
+            date_name = log_date.strftime("%d/%m/%Y")  # "03/12/2025"
+            
+            # Initialize month if not exists
+            if month_key not in grouped_data:
+                grouped_data[month_key] = {
+                    "month_key": month_key,
+                    "month_name": month_name,
+                    "total_entries": 0,
+                    "successful_entries": 0,
+                    "failed_entries": 0,
+                    "dates": {}
+                }
+            
+            # Initialize date if not exists
+            if date_key not in grouped_data[month_key]["dates"]:
+                grouped_data[month_key]["dates"][date_key] = {
+                    "date_key": date_key,
+                    "date_name": date_name,
+                    "total_entries": 0,
+                    "successful_entries": 0,
+                    "failed_entries": 0,
+                    "logs": []
+                }
+            
+            # Add log to date
+            grouped_data[month_key]["dates"][date_key]["logs"].append(log)
+            grouped_data[month_key]["dates"][date_key]["total_entries"] += 1
+            
+            if log.get("access_granted"):
+                grouped_data[month_key]["dates"][date_key]["successful_entries"] += 1
+            else:
+                grouped_data[month_key]["dates"][date_key]["failed_entries"] += 1
+            
+            # Update month totals
+            grouped_data[month_key]["total_entries"] += 1
+            if log.get("access_granted"):
+                grouped_data[month_key]["successful_entries"] += 1
+            else:
+                grouped_data[month_key]["failed_entries"] += 1
+        
+        # Convert to sorted lists
+        months = []
+        for month_key in sorted(grouped_data.keys(), reverse=True):
+            month_data = grouped_data[month_key]
+            
+            # Convert dates dict to sorted list
+            dates = []
+            for date_key in sorted(month_data["dates"].keys(), reverse=True):
+                dates.append(month_data["dates"][date_key])
+            
+            month_data["dates"] = dates
+            months.append(month_data)
+        
+        return {
+            "months": months,
+            "total_logs": len(logs),
+            "total_months": len(months)
+        }
+        
     except Exception as e:
         logger.error(f"Access logs error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -1894,6 +2004,42 @@ async def legacy_delete_member(request: Request, member_id: int):
     except Exception as e:
         request.session['messages'] = [{'category': 'error', 'message': f'Delete error: {str(e)}'}]
     return RedirectResponse(url=url_for(request, 'index'), status_code=303)
+
+# ========================================
+# SESSION STATS API
+# ========================================
+
+@app.get("/api/access/session-stats")
+async def get_session_stats(current_user=Depends(get_current_user)):
+    """Get total access statistics for the gym owner"""
+    try:
+        user_email = current_user["email"]
+        
+        # Get all access logs for this gym owner using owner_email filter
+        all_logs_result = supabase_admin.table("access_logs").select("*").eq("owner_email", user_email).execute()
+        user_logs = all_logs_result.data or []
+        
+        total_scans = len(user_logs)
+        successful_scans = len([log for log in user_logs if log.get("access_granted", False)])
+        failed_scans = total_scans - successful_scans
+        
+        # Get today's stats
+        today = datetime.now().date()
+        today_logs = [log for log in user_logs if log.get("timestamp") and datetime.fromisoformat(log["timestamp"].replace("Z", "+00:00")).date() == today]
+        today_scans = len(today_logs)
+        today_successful = len([log for log in today_logs if log.get("access_granted", False)])
+        
+        return {
+            "total_scans": total_scans,
+            "successful_scans": successful_scans,
+            "failed_scans": failed_scans,
+            "today_scans": today_scans,
+            "today_successful": today_successful,
+            "today_failed": today_scans - today_successful
+        }
+    except Exception as e:
+        logger.error(f"Session stats error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

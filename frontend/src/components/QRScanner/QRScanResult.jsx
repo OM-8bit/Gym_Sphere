@@ -11,6 +11,37 @@ const QRScanResult = ({
   onClose = null,
   className = ''
 }) => {
+  // Helper functions for card status display
+  const getCardStatusText = () => {
+    // Option 3: Base status on member's access grant status
+    if (result?.success !== undefined) {
+      return result.success ? 'Active' : 'Inactive'
+    }
+    
+    // Option 2: Show "Assigned" if card is inactive (means it's in use)
+    if (card?.is_active === false && member) {
+      return 'Assigned'
+    }
+    
+    // Fallback to original logic
+    return card?.is_active ? 'Active' : 'Assigned'
+  }
+  
+  const getCardStatusColor = () => {
+    // Option 3: Color based on member's access grant status
+    if (result?.success !== undefined) {
+      return result.success ? '#10b981' : '#ef4444'
+    }
+    
+    // Option 2: Show green for assigned cards (they're working)
+    if (card?.is_active === false && member) {
+      return '#10b981'
+    }
+    
+    // Fallback
+    return card?.is_active ? '#10b981' : '#10b981'
+  }
+  
   const getStatusIcon = () => {
     switch (status) {
       case 'success':
@@ -190,33 +221,48 @@ const QRScanResult = ({
             gap: '12px',
             color: '#ffffff'
           }}>
-            <div>
+            <div style={{ gridColumn: member.name && !member.first_name ? '1 / -1' : 'auto' }}>
               <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Name</p>
               <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
-                {member.first_name} {member.last_name}
+                {member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || 'N/A'}
               </p>
             </div>
             
-            <div>
-              <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Member ID</p>
-              <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
-                #{member.member_id}
-              </p>
-            </div>
+            {member.member_id && (
+              <div>
+                <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Member ID</p>
+                <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
+                  #{member.member_id}
+                </p>
+              </div>
+            )}
             
-            <div>
-              <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Email</p>
-              <p style={{ fontSize: '14px', margin: 0 }}>
-                {member.email}
-              </p>
-            </div>
+            {member.email && (
+              <div>
+                <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Email</p>
+                <p style={{ fontSize: '14px', margin: 0 }}>
+                  {member.email}
+                </p>
+              </div>
+            )}
             
-            <div>
-              <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Phone</p>
-              <p style={{ fontSize: '14px', margin: 0 }}>
-                {member.phone}
-              </p>
-            </div>
+            {member.membership_type && (
+              <div>
+                <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Plan</p>
+                <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
+                  {member.membership_type}
+                </p>
+              </div>
+            )}
+            
+            {member.phone && (
+              <div>
+                <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Phone</p>
+                <p style={{ fontSize: '14px', margin: 0 }}>
+                  {member.phone}
+                </p>
+              </div>
+            )}
             
             {member.membership_start && (
               <div>
@@ -227,15 +273,15 @@ const QRScanResult = ({
               </div>
             )}
             
-            {member.membership_end && (
+            {(member.membership_end || member.subscription_end) && (
               <div>
                 <p style={{ fontSize: '12px', color: '#a0a0a0', margin: '0 0 4px 0' }}>Membership End</p>
                 <p style={{ 
                   fontSize: '14px', 
                   margin: 0,
-                  color: new Date(member.membership_end) < new Date() ? '#ef4444' : '#10b981'
+                  color: new Date(member.membership_end || member.subscription_end) < new Date() ? '#ef4444' : '#10b981'
                 }}>
-                  {new Date(member.membership_end).toLocaleDateString()}
+                  {new Date(member.membership_end || member.subscription_end).toLocaleDateString()}
                 </p>
               </div>
             )}
@@ -284,9 +330,9 @@ const QRScanResult = ({
                 fontSize: '14px', 
                 fontWeight: '600', 
                 margin: 0,
-                color: card.is_active ? '#10b981' : '#ef4444'
+                color: getCardStatusColor()
               }}>
-                {card.is_active ? 'Active' : 'Inactive'}
+                {getCardStatusText()}
               </p>
             </div>
             

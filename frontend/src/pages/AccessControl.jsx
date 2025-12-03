@@ -1,8 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { QrCode, Clock, CheckCircle, AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react'
+import { QrCode, Clock, CheckCircle, AlertTriangle, ArrowLeft, RefreshCw, ChevronDown } from 'lucide-react'
 import { QRScanner, QRScanResult } from '../components/QRScanner'
 import qrScannerService from '../services/qrScanner'
+import api from '../services/api'
 import toast from 'react-hot-toast'
 
 export default function AccessControl() {
@@ -13,8 +14,28 @@ export default function AccessControl() {
   const [stats, setStats] = useState({
     totalScans: 0,
     successfulScans: 0,
-    failedScans: 0
+    failedScans: 0,
+    todayScans: 0,
+    todaySuccessful: 0,
+    todayFailed: 0
   })
+  const [sessionStats, setSessionStats] = useState({
+    sessionScans: 0,
+    sessionSuccessful: 0,
+    sessionFailed: 0
+  })
+  const [expandedStats, setExpandedStats] = useState({
+    allTime: false,
+    today: false,
+    session: false
+  })
+
+  const toggleStat = (section) => {
+    setExpandedStats(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
 
   useEffect(() => {
     // Load scan history from localStorage
@@ -26,17 +47,41 @@ export default function AccessControl() {
         console.error('Failed to parse scan history:', error)
       }
     }
+
+    // Fetch total statistics from database
+    fetchTotalStats()
   }, [])
 
+  const fetchTotalStats = async () => {
+    try {
+      const { data } = await api.get('/api/access/session-stats')
+      setStats({
+        totalScans: data.total_scans || 0,
+        successfulScans: data.successful_scans || 0,
+        failedScans: data.failed_scans || 0,
+        todayScans: data.today_scans || 0,
+        todaySuccessful: data.today_successful || 0,
+        todayFailed: data.today_failed || 0
+      })
+    } catch (error) {
+      console.error('Failed to fetch stats:', error)
+    }
+  }
+
   const saveToHistory = (result) => {
+    const memberName = result.member?.name || 
+                       (result.member?.first_name && result.member?.last_name 
+                         ? `${result.member.first_name} ${result.member.last_name}`
+                         : null)
+    const cardId = result.card?.card_id || result.card?.card_number || result.rawData
+    
     const historyItem = {
       id: Date.now(),
       timestamp: new Date().toISOString(),
       success: result.success,
-      cardId: result.card?.card_id || result.rawData,
-      member: result.member?.first_name && result.member?.last_name 
-        ? `${result.member.first_name} ${result.member.last_name}`
-        : null,
+      cardId: cardId,
+      member: memberName,
+      memberCardDisplay: memberName ? `${memberName} - ${cardId}` : cardId,
       message: result.message
     }
 
@@ -44,12 +89,15 @@ export default function AccessControl() {
     setScanHistory(newHistory)
     localStorage.setItem('qr_scan_history', JSON.stringify(newHistory))
 
-    // Update stats
-    setStats(prev => ({
-      totalScans: prev.totalScans + 1,
-      successfulScans: prev.successfulScans + (result.success ? 1 : 0),
-      failedScans: prev.failedScans + (result.success ? 0 : 1)
+    // Update session stats
+    setSessionStats(prev => ({
+      sessionScans: prev.sessionScans + 1,
+      sessionSuccessful: prev.sessionSuccessful + (result.success ? 1 : 0),
+      sessionFailed: prev.sessionFailed + (result.success ? 0 : 1)
     }))
+
+    // Refresh total stats from database
+    fetchTotalStats()
   }
 
   const handleScan = async (qrData) => {
@@ -101,12 +149,12 @@ export default function AccessControl() {
   const clearHistory = () => {
     setScanHistory([])
     localStorage.removeItem('qr_scan_history')
-    setStats({
-      totalScans: 0,
-      successfulScans: 0,
-      failedScans: 0
+    setSessionStats({
+      sessionScans: 0,
+      sessionSuccessful: 0,
+      sessionFailed: 0
     })
-    toast.success('Scan history cleared')
+    toast.success('Session history cleared')
   }
 
   return (
@@ -215,8 +263,8 @@ export default function AccessControl() {
 
         {/* Stats and History Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Scan Statistics */}
-          <div className="card">
+          {/* Scan Statistics - Accordion */}
+          <div className="card access-stats-card">
             <h3 style={{ 
               color: '#ffffff', 
               fontSize: '18px', 
@@ -226,46 +274,255 @@ export default function AccessControl() {
               alignItems: 'center',
               gap: '8px'
             }}>
-              📊 Session Stats
+              📊 Access Statistics
             </h3>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 0',
-                borderBottom: '1px solid #404040'
-              }}>
-                <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Total Scans</span>
-                <span style={{ color: '#ffffff', fontWeight: '600' }}>{stats.totalScans}</span>
+            {/* All Time Accordion */}
+            <div style={{ marginBottom: '12px' }}>
+              <div 
+                onClick={() => toggleStat('allTime')}
+                style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px',
+                  background: '#2a2a2a',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  border: '1px solid #404040',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <h4 style={{ 
+                  color: '#ff6b35', 
+                  fontSize: '14px', 
+                  fontWeight: '600',
+                  margin: 0,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  ALL TIME
+                </h4>
+                <ChevronDown 
+                  size={16} 
+                  style={{ 
+                    color: '#ff6b35',
+                    transform: expandedStats.allTime ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }} 
+                />
               </div>
               
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 0',
-                borderBottom: '1px solid #404040'
-              }}>
-                <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Successful</span>
-                <span style={{ color: '#10b981', fontWeight: '600' }}>{stats.successfulScans}</span>
+              {expandedStats.allTime && (
+                <div style={{ 
+                  marginTop: '8px',
+                  padding: '12px',
+                  background: '#252525',
+                  borderRadius: '8px',
+                  border: '1px solid #353535'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Total Entries</span>
+                      <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '16px' }}>{stats.totalScans}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Granted</span>
+                      <span style={{ color: '#10b981', fontWeight: '600' }}>{stats.successfulScans}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Denied</span>
+                      <span style={{ color: '#ef4444', fontWeight: '600' }}>{stats.failedScans}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Today Accordion */}
+            <div style={{ marginBottom: '12px' }}>
+              <div 
+                onClick={() => toggleStat('today')}
+                style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px',
+                  background: '#2a2a2a',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  border: '1px solid #404040',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <h4 style={{ 
+                  color: '#3b82f6', 
+                  fontSize: '14px', 
+                  fontWeight: '600',
+                  margin: 0,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  TODAY
+                </h4>
+                <ChevronDown 
+                  size={16} 
+                  style={{ 
+                    color: '#3b82f6',
+                    transform: expandedStats.today ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }} 
+                />
               </div>
               
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 0'
-              }}>
-                <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Failed</span>
-                <span style={{ color: '#ef4444', fontWeight: '600' }}>{stats.failedScans}</span>
+              {expandedStats.today && (
+                <div style={{ 
+                  marginTop: '8px',
+                  padding: '12px',
+                  background: '#252525',
+                  borderRadius: '8px',
+                  border: '1px solid #353535'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Total</span>
+                      <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '16px' }}>{stats.todayScans}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Granted</span>
+                      <span style={{ color: '#10b981', fontWeight: '600' }}>{stats.todaySuccessful}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Denied</span>
+                      <span style={{ color: '#ef4444', fontWeight: '600' }}>{stats.todayFailed}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* This Session Accordion */}
+            <div>
+              <div 
+                onClick={() => toggleStat('session')}
+                style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px',
+                  background: '#2a2a2a',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  border: '1px solid #404040',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <h4 style={{ 
+                  color: '#10b981', 
+                  fontSize: '14px', 
+                  fontWeight: '600',
+                  margin: 0,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  THIS SESSION
+                </h4>
+                <ChevronDown 
+                  size={16} 
+                  style={{ 
+                    color: '#10b981',
+                    transform: expandedStats.session ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }} 
+                />
               </div>
+              
+              {expandedStats.session && (
+                <div style={{ 
+                  marginTop: '8px',
+                  padding: '12px',
+                  background: '#252525',
+                  borderRadius: '8px',
+                  border: '1px solid #353535'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Scans</span>
+                      <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '16px' }}>{sessionStats.sessionScans}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #404040'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Successful</span>
+                      <span style={{ color: '#10b981', fontWeight: '600' }}>{sessionStats.sessionSuccessful}</span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 0'
+                    }}>
+                      <span style={{ color: '#a0a0a0', fontSize: '14px' }}>Failed</span>
+                      <span style={{ color: '#ef4444', fontWeight: '600' }}>{sessionStats.sessionFailed}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Scan History */}
-          <div className="card">
+          <div className="card recent-scans-card">
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -316,7 +573,7 @@ export default function AccessControl() {
                     padding: '12px',
                     border: '1px solid #404040'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                       {item.success ? (
                         <CheckCircle size={14} color="#10b981" />
                       ) : (
@@ -327,21 +584,15 @@ export default function AccessControl() {
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        Access
+                        {item.success ? 'Granted' : 'Denied'}
                       </span>
                       <span style={{ color: '#a0a0a0', fontSize: '12px' }}>
                         {new Date(item.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
                     
-                    {item.member && (
-                      <p style={{ color: '#ffffff', fontSize: '12px', margin: '0 0 2px 0' }}>
-                        {item.member}
-                      </p>
-                    )}
-                    
-                    <p style={{ color: '#a0a0a0', fontSize: '11px', margin: 0 }}>
-                      {item.cardId || 'Unknown card'}
+                    <p style={{ color: '#ffffff', fontSize: '13px', margin: 0, fontWeight: '500' }}>
+                      {item.memberCardDisplay || item.cardId || 'Unknown card'}
                     </p>
                   </div>
                 ))}
