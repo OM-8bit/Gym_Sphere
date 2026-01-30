@@ -48,6 +48,9 @@ ENV/
 
 # Python cache
 *.pyc
+
+# Personal documentation
+PROJECT_WORKING.md
 *.pyo
 
 # Context files for development understanding (private)
