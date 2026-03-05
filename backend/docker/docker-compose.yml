@@ -29,7 +29,7 @@
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=https://gym-sphere.onrender.com
+      - VITE_API_URL=http://localhost:8000
     networks:
       - gymsphere-network
 
