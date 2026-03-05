@@ -78,6 +78,7 @@ app.add_middleware(
         "https://gymsphereerp.netlify.app",
         "http://localhost:3000", 
         "http://localhost:5173", 
+        "http://localhost:4173", 
         "http://localhost:5174",
         "http://localhost:3001", 
         "http://127.0.0.1:3001", 
