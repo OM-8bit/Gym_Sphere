@@ -771,3 +771,80 @@ html {
     border-bottom: none;
   }
 }
+
+/* ===== ACCESS LOGS RESPONSIVE ===== */
+@media (max-width: 767px) {
+  /* Hide stats badges on mobile for month accordions */
+  .month-stats {
+    display: none !important;
+  }
+  
+  /* Show stats below title on mobile */
+  .month-stats-mobile {
+    display: flex !important;
+    gap: 8px;
+    margin-top: 8px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Simplify stats on tablet */
+  .date-stats span:first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Stack log entries vertically on mobile/tablet */
+  .log-entry-mobile {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+
+/* ===== ACCESS CONTROL PAGE RESPONSIVE ===== */
+@media (max-width: 1023px) {
+  /* Stack scanner and sidebar vertically on mobile/tablet */
+  div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Make stats and recent scans cards visible and full-width on mobile */
+  .access-stats-card,
+  .recent-scans-card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Adjust accordion spacing on mobile */
+  .access-stats-card h3,
+  .recent-scans-card h3 {
+    font-size: 16px !important;
+  }
+  
+  /* Compact accordion headers on mobile */
+  .access-stats-card div[style*="cursor: pointer"] {
+    padding: 10px !important;
+  }
+  
+  /* Adjust recent scans max height on mobile */
+  .recent-scans-card div[style*="maxHeight"] {
+    max-height: 250px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Even more compact on small mobile */
+  .access-stats-card div[style*="padding: 12px"],
+  .recent-scans-card div[style*="padding: 12px"] {
+    padding: 10px !important;
+  }
+  
+  /* Smaller fonts on mobile */
+  .access-stats-card span,
+  .recent-scans-card span {
+    font-size: clamp(12px, 2.5vw, 14px) !important;
+  }
+}
+
