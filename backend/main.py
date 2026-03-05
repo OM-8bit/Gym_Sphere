@@ -75,6 +75,7 @@ templates.env.globals['url_for'] = url_for
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://gymsphereerp.netlify.app",
         "http://localhost:3000", 
         "http://localhost:5173", 
         "http://localhost:5174",
