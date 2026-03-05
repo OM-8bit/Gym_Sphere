@@ -978,14 +978,16 @@ async def add_member(member: MemberCreate, current_user=Depends(get_current_user
 
         # Calculate subscription dates
         start_date = datetime.now()
-        if member.membership_type == "monthly":
+        if member.membership_type == "weekly":
+            end_date = start_date + timedelta(days=7)
+        elif member.membership_type == "monthly":
             end_date = start_date + timedelta(days=30)
         elif member.membership_type == "quarterly":
             end_date = start_date + timedelta(days=90)
         elif member.membership_type == "yearly":
             end_date = start_date + timedelta(days=365)
         else:
-            raise HTTPException(status_code=400, detail="Invalid membership type. Must be: monthly, quarterly, or yearly")
+            raise HTTPException(status_code=400, detail="Invalid membership type. Must be: weekly, monthly, quarterly, or yearly")
 
         # Prepare member data
         member_data = {

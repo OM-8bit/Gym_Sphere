@@ -1,15 +1,39 @@
-﻿import React, { useState } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { User, Mail, Building, Shield, Bell, Palette, Database, Key } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { User, Mail, Building, Shield, Bell, Database, Key } from 'lucide-react'
 
 export default function Settings() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState('profile')
+  
+  // Check for tab parameter in URL on component mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['profile', 'notifications', 'security', 'data'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+  
+  // Notification toggles state
+  const [notifications, setNotifications] = useState({
+    memberRegistration: true,
+    subscriptionExpiry: true,
+    paymentReminders: true,
+    systemUpdates: true
+  })
+
+  const toggleNotification = (key) => {
+    setNotifications(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'data', label: 'Data & Privacy', icon: Database },
   ]
@@ -178,89 +202,56 @@ export default function Settings() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {[
-                  { title: 'Member Registration', desc: 'Get notified when new members join' },
-                  { title: 'Subscription Expiry', desc: 'Alerts for expiring memberships' },
-                  { title: 'Payment Reminders', desc: 'Monthly payment notifications' },
-                  { title: 'System Updates', desc: 'Important system announcements' }
-                ].map((item, index) => (
-                  <div key={index} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '16px',
-                    background: '#3a3a3a',
-                    borderRadius: '8px',
-                    border: '1px solid #555'
-                  }}>
-                    <div>
-                      <div style={{ color: '#ffffff', fontWeight: '500', marginBottom: '4px' }}>
-                        {item.title}
-                      </div>
-                      <div style={{ color: '#a0a0a0', fontSize: '14px' }}>
-                        {item.desc}
-                      </div>
-                    </div>
-                    <div style={{
-                      width: '48px',
-                      height: '24px',
-                      background: '#ff6b35',
-                      borderRadius: '12px',
-                      position: 'relative',
-                      cursor: 'pointer'
+                  { key: 'memberRegistration', title: 'Member Registration', desc: 'Get notified when new members join' },
+                  { key: 'subscriptionExpiry', title: 'Subscription Expiry', desc: 'Alerts for expiring memberships' },
+                  { key: 'paymentReminders', title: 'Payment Reminders', desc: 'Monthly payment notifications' },
+                  { key: 'systemUpdates', title: 'System Updates', desc: 'Important system announcements' }
+                ].map((item) => {
+                  const isEnabled = notifications[item.key]
+                  return (
+                    <div key={item.key} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#3a3a3a',
+                      borderRadius: '8px',
+                      border: '1px solid #555'
                     }}>
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        background: '#ffffff',
-                        borderRadius: '50%',
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        transition: 'all 0.3s ease'
-                      }}></div>
+                      <div>
+                        <div style={{ color: '#ffffff', fontWeight: '500', marginBottom: '4px' }}>
+                          {item.title}
+                        </div>
+                        <div style={{ color: '#a0a0a0', fontSize: '14px' }}>
+                          {item.desc}
+                        </div>
+                      </div>
+                      <div 
+                        onClick={() => toggleNotification(item.key)}
+                        style={{
+                          width: '48px',
+                          height: '24px',
+                          background: isEnabled ? '#ff6b35' : '#555',
+                          borderRadius: '12px',
+                          position: 'relative',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          background: '#ffffff',
+                          borderRadius: '50%',
+                          position: 'absolute',
+                          top: '2px',
+                          right: isEnabled ? '2px' : '26px',
+                          transition: 'all 0.3s ease'
+                        }}></div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'appearance' && (
-            <div className="card">
-              <h3 style={{ color: '#ffffff', marginBottom: '24px', fontSize: '20px' }}>
-                Appearance Settings
-              </h3>
-              
-              <div style={{ marginBottom: '24px' }}>
-                <label className="label">Theme</label>
-                <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                  <div style={{
-                    padding: '20px',
-                    background: '#ff6b35',
-                    borderRadius: '12px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    color: '#ffffff',
-                    fontWeight: '600',
-                    border: '2px solid #ff6b35'
-                  }}>
-                    <div style={{ marginBottom: '8px' }}>🌙</div>
-                    Dark Theme
-                  </div>
-                  <div style={{
-                    padding: '20px',
-                    background: '#3a3a3a',
-                    borderRadius: '12px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    color: '#a0a0a0',
-                    fontWeight: '600',
-                    border: '2px solid #555'
-                  }}>
-                    <div style={{ marginBottom: '8px' }}>☀️</div>
-                    Light Theme
-                  </div>
-                </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -303,6 +294,26 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
+
+              <div style={{ 
+                marginTop: '32px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #ff6b3510, #ff6b3508)',
+                border: '1px solid #ff6b3530',
+                borderRadius: '12px'
+              }}>
+                <h4 style={{ 
+                  color: '#ff6b35', 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  marginBottom: '8px'
+                }}>
+                  Contact Support
+                </h4>
+                <p style={{ color: '#a0a0a0', fontSize: '14px', lineHeight: '1.6' }}>
+                  Security settings require administrator verification. Contact support if you need to change your password or enable two-factor authentication.
+                </p>
+              </div>
             </div>
           )}
 
@@ -317,13 +328,29 @@ export default function Settings() {
                   padding: '20px',
                   background: '#3a3a3a',
                   borderRadius: '12px',
-                  border: '1px solid #555'
+                  border: '1px solid #555',
+                  position: 'relative',
+                  opacity: 0.6
                 }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: '#fbbf24',
+                    color: '#000000',
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase'
+                  }}>
+                    Coming Soon
+                  </div>
                   <h4 style={{ color: '#ffffff', marginBottom: '12px' }}>Data Export</h4>
                   <p style={{ color: '#a0a0a0', fontSize: '14px', marginBottom: '16px' }}>
                     Download all your gym data including member information, access logs, and settings.
                   </p>
-                  <button className="btn btn-secondary">
+                  <button className="btn btn-secondary" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
                     Export Data
                   </button>
                 </div>
@@ -332,13 +359,29 @@ export default function Settings() {
                   padding: '20px',
                   background: 'linear-gradient(135deg, #ef444420, #ef444410)',
                   borderRadius: '12px',
-                  border: '1px solid #ef444440'
+                  border: '1px solid #ef444440',
+                  position: 'relative',
+                  opacity: 0.6
                 }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: '#fbbf24',
+                    color: '#000000',
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase'
+                  }}>
+                    Coming Soon
+                  </div>
                   <h4 style={{ color: '#f87171', marginBottom: '12px' }}>Delete Account</h4>
                   <p style={{ color: '#a0a0a0', fontSize: '14px', marginBottom: '16px' }}>
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
-                  <button className="btn btn-danger">
+                  <button className="btn btn-danger" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
                     Delete Account
                   </button>
                 </div>

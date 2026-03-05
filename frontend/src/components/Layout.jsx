@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { Dumbbell, Home, Users, UserPlus, ScanLine, FileText, Settings, LogOut, Menu, X, Search, Bell, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 // Assets moved to public folder - use public URL
@@ -20,7 +20,8 @@ const linkBase = {
 }
 
 export default function Layout({ children }) {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
@@ -230,16 +231,23 @@ export default function Layout({ children }) {
             alignItems: 'center', 
             gap: '16px' 
           }}>
-            <div style={{
-              background: '#ff6b35',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative'
-            }}>
+            <div 
+              onClick={() => navigate('/settings?tab=notifications')}
+              style={{
+                background: '#ff6b35',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
               <span style={{ fontSize: '12px', color: '#fff' }}>🔔</span>
               <div style={{
                 position: 'absolute',
@@ -264,7 +272,7 @@ export default function Layout({ children }) {
               <span style={{ fontSize: '12px', color: '#fff' }}>👤</span>
             </div>
             <div style={{ color: '#ffffff', fontSize: '15px', fontWeight: 500 }}>
-              Admin
+              {user?.gym_name || 'Admin'}
             </div>
           </div>
         </header>

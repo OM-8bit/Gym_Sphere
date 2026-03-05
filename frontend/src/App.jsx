@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import GuestRoute from './components/GuestRoute.jsx'
 import AuthProvider from './context/AuthContext.jsx'
 import './styles/responsive.css'
 import './styles/laptop.css'
@@ -25,8 +26,8 @@ export default function App() {
         }}
       >
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+          <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
           <Route path="/" element={<ProtectedRoute><Layout><Dashboard/></Layout></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard/></Layout></ProtectedRoute>} />
           <Route path="/members" element={<ProtectedRoute><Layout><Members/></Layout></ProtectedRoute>} />

@@ -224,7 +224,9 @@ export default function AddMember() {
                 value={form.membership_type} 
                 onChange={set('membership_type')}
               >
+                <option value="weekly">Weekly - $15/week</option>
                 <option value="monthly">Monthly - $49/month</option>
+                <option value="quarterly">Quarterly - $139/quarter</option>
                 <option value="yearly">Yearly - $499/year</option>
               </select>
             </div>

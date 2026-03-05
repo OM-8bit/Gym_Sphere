@@ -16,6 +16,34 @@ const MemberEditModal = ({ isOpen, member, onClose, onUpdate }) => {
   })
   const [loading, setLoading] = useState(false)
 
+  // Function to calculate end date based on start date and membership type
+  const calculateEndDate = (startDate, membershipType) => {
+    if (!startDate) return ''
+    
+    const start = new Date(startDate)
+    let endDate = new Date(start)
+    
+    switch (membershipType) {
+      case 'weekly':
+        endDate.setDate(start.getDate() + 7)
+        break
+      case 'monthly':
+        endDate.setDate(start.getDate() + 30)
+        break
+      case 'quarterly':
+        endDate.setDate(start.getDate() + 90)
+        break
+      case 'yearly':
+        endDate.setDate(start.getDate() + 365)
+        break
+      default:
+        endDate.setDate(start.getDate() + 30) // default to monthly
+    }
+    
+    // Format as YYYY-MM-DD
+    return endDate.toISOString().split('T')[0]
+  }
+
   useEffect(() => {
     if (member && isOpen) {
       // Helper function to format date from ISO string or existing format
@@ -53,6 +81,17 @@ const MemberEditModal = ({ isOpen, member, onClose, onUpdate }) => {
       })
     }
   }, [member, isOpen])
+
+  // Auto-calculate end date when membership type or start date changes
+  useEffect(() => {
+    if (formData.subscription_start && formData.membership_type) {
+      const newEndDate = calculateEndDate(formData.subscription_start, formData.membership_type)
+      setFormData(prev => ({
+        ...prev,
+        subscription_end: newEndDate
+      }))
+    }
+  }, [formData.membership_type, formData.subscription_start])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
