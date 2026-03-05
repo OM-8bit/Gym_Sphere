@@ -2,7 +2,17 @@
 
 > A complete beginner-friendly guide to set up and run Gym Sphere using Docker on Windows
 
-## 📋 Table of Contents
+## � Recent Changes (March 2026)
+
+**Important:** The Docker configuration has been reorganized for better deployment structure:
+- **Old location:** `docker/docker-compose.yml`
+- **New location:** `backend/docker/docker-compose.yml`
+
+All commands in this guide have been updated to reflect the new structure. If you're pulling the latest changes, make sure to navigate to `backend/docker` directory to run Docker commands.
+
+---
+
+## �📋 Table of Contents
 1. [What is Docker?](#what-is-docker)
 2. [Prerequisites](#prerequisites)
 3. [Docker Installation](#docker-installation)
@@ -77,6 +87,26 @@ You should see version numbers if everything is installed correctly.
 
 ## 🏗️ Project Setup
 
+### Project Structure
+```
+Gym_Sphere/
+├── backend/
+│   ├── docker/
+│   │   ├── docker-compose.yml  ← Docker orchestration file
+│   │   └── .env                ← Environment variables
+│   ├── main.py                 ← FastAPI application
+│   ├── requirements.txt        ← Python dependencies
+│   └── Dockerfile              ← Backend container config
+├── frontend/
+│   ├── src/                    ← React source code
+│   ├── Dockerfile              ← Frontend container config
+│   └── package.json            ← Node.js dependencies
+└── docker/
+    └── .env                    ← (Old location - no longer used)
+```
+
+> **Note:** The `docker-compose.yml` file orchestrates both backend and frontend containers from a single location.
+
 ### Step 1: Navigate to Project
 ```powershell
 cd C:\Users\Hp\Desktop\Gym_Sphere
@@ -84,8 +114,8 @@ cd C:\Users\Hp\Desktop\Gym_Sphere
 
 ### Step 2: Create Environment File
 ```powershell
-# Go to docker directory
-cd docker
+# Go to backend docker directory
+cd backend\docker
 
 # Create environment file
 New-Item -ItemType File -Name ".env"
@@ -108,8 +138,8 @@ SECRET_KEY=your-secret-key-here
 
 ### First Time Setup (takes 5-10 minutes)
 ```powershell
-# Make sure you're in the docker directory
-cd C:\Users\Hp\Desktop\Gym_Sphere\docker
+# Make sure you're in the backend docker directory
+cd C:\Users\Hp\Desktop\Gym_Sphere\backend\docker
 
 # Build all services (first time only)
 docker-compose build
@@ -143,7 +173,7 @@ Open your browser and visit:
 
 ### Start the Application
 ```powershell
-cd C:\Users\Hp\Desktop\Gym_Sphere\docker
+cd C:\Users\Hp\Desktop\Gym_Sphere\backend\docker
 docker-compose up -d
 ```
 > The `-d` flag runs it in the background
@@ -166,6 +196,46 @@ docker-compose up --build
 ---
 
 ## 🛠️ Troubleshooting
+
+### Problem: "no configuration file provided: not found"
+**Cause:** You're not in the correct directory for docker-compose commands.
+
+**Solution:**
+```powershell
+# Always navigate to backend/docker first
+cd C:\Users\Hp\Desktop\Gym_Sphere\backend\docker
+docker-compose up
+```
+
+### Problem: Environment variables not set (blank string warnings)
+**Error:** `The "SUPABASE_URL" variable is not set`
+
+**Cause:** The `.env` file is missing or in the wrong location.
+
+**Solution:**
+```powershell
+# Make sure .env file exists in backend/docker/
+cd C:\Users\Hp\Desktop\Gym_Sphere\backend\docker
+Get-ChildItem .env  # Should show the file
+
+# If missing, create it with your credentials
+```
+
+### Problem: "path not found" or "unable to prepare context"
+**Error:** `path "C:\...\backend\backend" not found`
+
+**Cause:** The docker-compose.yml has incorrect relative paths for the new location.
+
+**Solution:** Make sure your docker-compose.yml has these correct paths:
+```yaml
+backend:
+  build:
+    context: ..  # Points to backend/ directory
+
+frontend:
+  build:
+    context: ../../frontend  # Points to frontend/ directory
+```
 
 ### Problem: Docker Desktop won't start
 **Solution:**
@@ -216,6 +286,14 @@ docker-compose up
 
 ## ❓ FAQ
 
+### Q: I'm updating from the old docker/ structure. What should I do?
+**A:** 
+1. Pull the latest changes: `git pull origin master`
+2. Stop any running containers from the old location: `docker-compose down`
+3. Move your `.env` file: `Move-Item docker\.env backend\docker\.env`
+4. Navigate to the new location: `cd backend\docker`
+5. Rebuild and start: `docker-compose up --build`
+
 ### Q: Do I need to install Python or Node.js separately?
 **A:** No! Docker handles all dependencies automatically.
 
@@ -232,7 +310,7 @@ docker-compose up
 **A:**
 ```powershell
 git pull origin master
-cd docker
+cd backend\docker
 docker-compose down
 docker-compose build --no-cache
 docker-compose up
@@ -254,7 +332,7 @@ docker system prune -a
 ### Essential Commands
 ```powershell
 # Start application
-cd C:\Users\Hp\Desktop\Gym_Sphere\docker
+cd C:\Users\Hp\Desktop\Gym_Sphere\backend\docker
 docker-compose up -d
 
 # Stop application
